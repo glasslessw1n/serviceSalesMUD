@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>医科达售后服务 MUD</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<header id="topbar">
+  <span class="logo">⚡ 医科达售后服务销售 MUD</span>
+  <span class="subtitle">树状游戏引擎</span>
+  <nav>
+    <button id="btn-new" title="新游戏">🆕</button>
+    <button id="btn-save" title="存档">💾</button>
+    <button id="btn-load" title="读档">📂</button>
+    <button id="btn-status" title="切换状态面板">📊</button>
+  </nav>
+</header>
+
+<!-- 主布局 -->
+<div id="main-layout">
+
+  <!-- 游戏区 -->
+  <main id="game-area">
+    <!-- 场景卡片 -->
+    <div id="scene-card" class="panel">
+      <div id="scene-header">
+        <span id="scene-title"></span>
+        <span id="scene-tags"></span>
+      </div>
+      <div id="scene-speaker"></div>
+      <div id="scene-text"></div>
+    </div>
+
+    <!-- 效果日志 -->
+    <div id="log-area" class="hidden"></div>
+
+    <!-- 选项区 -->
+    <div id="choices-area">
+      <div id="choices-list"></div>
+    </div>
+
+    <!-- 结束画面 -->
+    <div id="end-screen" class="hidden">
+      <h2>游戏结束</h2>
+      <p id="end-text"></p>
+      <button class="btn-primary" onclick="newGame()">🔄 重新开始</button>
+    </div>
+  </main>
+
+  <!-- 状态面板 -->
+  <aside id="status-panel" class="panel">
+    <div class="status-section">
+      <h3>⏰ 时间</h3>
+      <div id="status-time"></div>
+    </div>
+
+    <div class="status-section">
+      <h3>📈 属性</h3>
+      <div id="status-attrs"></div>
+    </div>
+
+    <div class="status-section">
+      <h3>👥 NPC 关系</h3>
+      <div id="status-npcs"></div>
+    </div>
+
+    <div class="status-section">
+      <h3>🎒 物品</h3>
+      <div id="status-items"></div>
+    </div>
+
+    <div class="status-section">
+      <h3>🏷 标记</h3>
+      <div id="status-flags"></div>
+    </div>
+  </aside>
+
+</div>
+
+<!-- 存档弹窗 -->
+<div id="save-modal" class="modal hidden">
+  <div class="modal-content">
+    <h2>📁 存档管理</h2>
+    <div id="save-list"></div>
+    <button class="btn-secondary" onclick="closeModal('save-modal')">关闭</button>
+  </div>
+</div>
+
+<script src="/static/game.js"></script>
+</body>
+</html>

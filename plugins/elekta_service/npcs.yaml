@@ -1,0 +1,19 @@
+- name: "王科长"
+  role: "设备科科长"
+  relationship: 25
+  trust: 15
+
+- name: "孙主任"
+  role: "放疗科主任"
+  relationship: 30
+  trust: 20
+
+- name: "王工"
+  role: "资深现场工程师"
+  relationship: 40
+  trust: 35
+
+- name: "小赵（物理师）"
+  role: "医学物理师"
+  relationship: 10
+  trust: 10

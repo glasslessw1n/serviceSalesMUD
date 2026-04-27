@@ -1,0 +1,463 @@
+# 示例场景 — 医科达售后服务：急诊抢修 → 维保谈判
+# 插件名: elekta_service
+# 作者: 奥利奥 x Hermes
+
+- id: start
+  title: "深夜急诊"
+  speaker: "系统"
+  text: |
+    凌晨 2:14，你的手机在床头柜上发出急促的震动。
+
+    屏幕上显示：「XX省肿瘤医院 设备科 王科长」
+
+    你接起电话，对面声音急促：
+    「林经理，放疗科的 Versa HD 突然报 MLC interlock，控制台显示
+    "Carriage position error"，3 个患者排在上午 8 点，能派人吗？」
+
+    你翻身坐起，脑子里快速过了一遍：
+    - Versa HD 的 MLC 联锁是常见故障，但 "Carriage position error" 意味着可能需要换硬件
+    - 今晚值班工程师是王工（资深）和小李（新人）
+    - 这家医院的维保合同还有 3 个月到期，他们正在比价……
+  tags: ["急诊", "关键决策"]
+  on_enter:
+    - effect: set_flag
+      flag: emergency_triggered
+  choices:
+    - text: "立刻通知值班工程师王工出发"
+      next: dispatch_engineer
+      effects:
+        - effect: mod_attr
+          attr: 技术能力
+          op: "+"
+          value: 3
+        - effect: mod_npc_relation
+          npc: "王科长"
+          op: "+"
+          value: 5
+        - effect: advance_time
+          hours: 1
+    - text: "先回拨给放疗科孙主任了解情况"
+      next: call_director
+      conditions:
+        - check: attr
+          attr: 关系值
+          op: ">="
+          value: 25
+      effects:
+        - effect: advance_time
+          hours: 1
+    - text: "让王科长先发机器日志过来，我再判断"
+      next: analyze_logs
+      effects:
+        - effect: advance_time
+          hours: 1
+
+- id: dispatch_engineer
+  title: "紧急出动"
+  speaker: "王工（资深工程师）"
+  text: |
+    1 小时后，你和王工赶到医院。放疗科走廊里，孙主任已经在等了。
+
+    王工打开控制台，眉头微皱：
+    「Log 显示 Carriage A 在 X2 位置反复失步，很可能是驱动板故障。
+    好消息是：我们服务车上有一块备板。
+    坏消息是：换完需要做 full QA，至少 2 小时。」
+
+    孙主任在旁边焦急地看着：「8 点有 3 个患者，都是定位好的，耽误不得啊……」
+
+    王工看向你：「林经理，换板 + QA，时间紧但能赶上。不过这属于计划外维修，
+    合同里的响应时效已经超了。你怎么跟院里沟通？」
+  choices:
+    - text: "先修机器，费用和流程的事我来跟王科长谈"
+      next: negotiate_onsite
+      conditions:
+        - check: attr
+          attr: 商务敏感度
+          op: ">="
+          value: 20
+      tags: ["推荐"]
+      effects:
+        - effect: mod_npc_trust
+          npc: "王工"
+          op: "+"
+          value: 5
+        - effect: mod_npc_relation
+          npc: "孙主任"
+          op: "+"
+          value: 10
+        - effect: set_flag
+          flag: fast_response
+    - text: "按流程先让王科长签维修申请单"
+      next: wait_approval
+      effects:
+        - effect: mod_npc_relation
+          npc: "孙主任"
+          op: "-"
+          value: 5
+        - effect: set_flag
+          flag: by_the_book
+
+- id: call_director
+  title: "关键人情报"
+  speaker: "孙主任（放疗科主任）"
+  text: |
+    电话接通，孙主任压低声音：
+
+    「林经理，正好你打来了。我听说设备科最近收到了 Varian 的报价，
+    TrueBeam 的维保方案比你们低 18%。王科长那边态度有点微妙……
+
+    不过我问你，今天这 MLC 的问题你们多久能搞定？
+    我手上有 3 个鼻咽癌患者等着，定位精度要求很高。
+    你要是能让我放心，维保的事我在院长会上替你们说话。」
+  tags: ["情报", "关系网"]
+  effects:
+    - effect: mod_npc_relation
+      npc: "孙主任"
+      op: "+"
+      value: 8
+    - effect: set_flag
+      flag: varian_quote_known
+  choices:
+    - text: "2 小时内解决，我亲自带人去"
+      next: dispatch_engineer
+      effects:
+        - effect: mod_npc_trust
+          npc: "孙主任"
+          op: "+"
+          value: 10
+        - effect: set_flag
+          flag: director_promise
+    - text: "实话实说：可能需要换件，4 小时起步"
+      next: dispatch_engineer
+      effects:
+        - effect: mod_npc_trust
+          npc: "孙主任"
+          op: "+"
+          value: 5
+        - effect: set_flag
+          flag: honest_estimate
+
+- id: analyze_logs
+  title: "远程诊断"
+  speaker: "系统"
+  text: |
+    你打开笔记本，王科长发来的 log 文件显示：
+
+    ```
+    MLC Carriage A Position Error
+    Time: 02:03:15
+    X2 actual: 15.7mm, target: 15.0mm (偏差 > 0.5mm tolerance)
+    Retry count: 3 → fail
+    ```
+
+    你搜索知识库，发现这是 Versa HD 批次的已知问题：
+    驱动板固件版本 < 3.2 时，长期运行后会出现电位器漂移。
+
+    不换件的话，也可以远程指导医院物理师做一个固件升级 + 重新校准。
+    但这个方法有 30% 概率复发。
+  choices:
+    - text: "远程指导物理师操作（赌一把）"
+      next: remote_fix
+      conditions:
+        - check: attr
+          attr: 技术能力
+          op: ">="
+          value: 35
+      effects:
+        - effect: mod_attr
+          attr: 技术能力
+          op: "+"
+          value: 5
+    - text: "确认需要换件，带王工出发"
+      next: dispatch_engineer
+      effects:
+        - effect: mod_npc_relation
+          npc: "王科长"
+          op: "+"
+          value: 3
+
+- id: remote_fix
+  title: "远程指导"
+  speaker: "系统"
+  text: |
+    你通过 TeamViewer 远程接入控制台，指导物理师小赵操作：
+
+    1. 进入 Service Mode
+    2. 刷入固件 v3.2.1
+    3. 重新校准 Carriage A 的电位器零点
+    4. 跑 quick QA
+
+    45 分钟后，MLC 恢复正常。小赵在电话那头长出一口气：
+    「林经理，太强了！省了一次现场费。」
+
+    不过你也清楚——如果下次再复发，就没这么好运气了。
+  effects:
+    - effect: mod_npc_relation
+      npc: "小赵（物理师）"
+      op: "+"
+      value: 15
+    - effect: mod_attr
+      attr: 声望
+      op: "+"
+      value: 10
+    - effect: set_flag
+      flag: remote_fixed
+  choices:
+    - text: "第二天上门做预防性检查"
+      next: preventive_visit
+      effects:
+        - effect: set_flag
+          flag: preventive_scheduled
+        - effect: advance_time
+          hours: 8
+    - text: "先这样，有问题再说"
+      next: followup_later
+      effects:
+        - effect: advance_time
+          hours: 6
+
+- id: negotiate_onsite
+  title: "现场谈判"
+  speaker: "王科长（设备科）"
+  text: |
+    王工在机房换板，你把王科长拉到走廊：
+
+    「王科长，这次是计划外维修，但我不跟您算加急费。
+    您说实话——维保合同的比价现在到哪一步了？」
+
+    王科长犹豫了一下：
+    「林经理，咱们合作这么多年了，我可以透个底：
+    Varian 报了 3 年全保，比你们低 18%。
+    但孙主任那边认你们的技术，说 Versa HD 只有你们的人搞得定。」
+
+    「现在院里的意见：谁能在 8 点前解决今天的事，谁加 10 分。」
+  tags: ["谈判", "情报"]
+  effects:
+    - effect: set_flag
+      flag: varian_quote_known
+    - effect: mod_npc_relation
+      npc: "王科长"
+      op: "+"
+      value: 10
+  choices:
+    - text: "给个诚心价：续约 2 年，我申请 12% 折扣"
+      next: seal_deal
+      conditions:
+        - check: flag
+          flag: fast_response
+      effects:
+        - effect: set_flag
+          flag: offered_discount
+    - text: "先不谈钱，修好机器再说"
+      next: fix_first
+
+- id: wait_approval
+  title: "流程陷阱"
+  speaker: "系统"
+  text: |
+    你坚持让王科长先签维修申请单。王科长面露难色：
+
+    「林经理，流程我理解，但现在半夜 3 点，审批要走 OA，
+    设备科副科长签字、分管副院长审批……最快明天下午才能走完。」
+
+    孙主任在旁边脸色铁青：「等走完流程，我的患者肿瘤都多长了 6 小时！」
+
+    王工双手一摊：「林经理，板子就在车上，你一句话我就开工。」
+  tags: ["教训"]
+  effects:
+    - effect: mod_npc_relation
+      npc: "孙主任"
+      op: "-"
+      value: 10
+    - effect: mod_npc_trust
+      npc: "王工"
+      op: "-"
+      value: 3
+  choices:
+    - text: "……算了，先修，流程后补"
+      next: negotiate_onsite
+      effects:
+        - effect: mod_attr
+          attr: 商务敏感度
+          op: "+"
+          value: 5
+        - effect: set_flag
+          flag: learned_flexibility
+    - text: "坚持走流程（患者延迟）"
+      next: patient_delayed
+
+- id: patient_delayed
+  title: "患者延误"
+  speaker: "系统"
+  text: |
+    第二天下午流程走完，王工修好了机器。
+
+    但孙主任的三个患者已经转到了隔壁市人民医院。原因是等不起。
+
+    更糟的是，院长在周会上点名批评了设备科的响应速度，
+    而王科长把锅甩给了「供应商流程僵化」。
+
+    你的维保续约机会……悬了。
+  tags: ["坏结局"]
+  choices:
+    - text: "吸取教训，下次灵活处理"
+      next: __END__
+      effects:
+        - effect: log
+          message: "💀 获得成就：流程正义的代价"
+
+- id: fix_first
+  title: "工程师的骄傲"
+  speaker: "王工"
+  text: |
+    王工花了 1 小时 40 分钟完成换板和 full QA。
+    6:00 AM，MLC 精度测试全部通过。
+
+    孙主任亲自验收：「林经理，你们的人确实专业。Varian 便宜 18%，
+    但他们的工程师上次来，连我们的 Monaco 治疗计划系统都不熟。」
+
+    他拍拍你的肩：「维保的事，我投你们一票。」
+
+    不过你也知道——院长那边的预算会才是最终关卡。
+  effects:
+    - effect: mod_npc_relation
+      npc: "孙主任"
+      op: "+"
+      value: 15
+    - effect: mod_npc_trust
+      npc: "孙主任"
+      op: "+"
+      value: 10
+    - effect: set_flag
+      flag: director_endorsed
+  choices:
+    - text: "约下周跟孙主任单独吃饭"
+      next: seal_deal
+    - text: "先回公司准备维保方案调整"
+      next: prepare_proposal
+
+- id: seal_deal
+  title: "成交"
+  speaker: "系统"
+  text: |
+    三天后，你带着调整后的维保方案来到院长办公室。
+
+    方案要点：
+    • 2 年全保，价格比 Varian 高 8%（而不是 18%）
+    • 包含 2 次免费临床应用培训（孙主任需要这个发论文）
+    • 响应时效从 4 小时升级到 2 小时
+    • 提供备用 MLC 驱动板一台（免费存放）
+
+    院长翻了翻方案，又看了看孙主任的推荐意见：
+    「行，技术确实有差距。签吧。」
+
+    你走出医院大楼，阳光正好。
+    不是因为做成了这一单——而是因为你明白了：
+    售后服务销售不是卖合同，是卖信任。
+  tags: ["好结局", "通关"]
+  effects:
+    - effect: mod_attr
+      attr: 声望
+      op: "+"
+      value: 20
+    - effect: mod_attr
+      attr: 商务敏感度
+      op: "+"
+      value: 10
+  choices:
+    - text: "这只是开始"
+      next: __END__
+      effects:
+        - effect: log
+          message: "🏆 通关！医科达售后销售第一关。"
+
+- id: preventive_visit
+  title: "预防性维护"
+  speaker: "系统"
+  text: |
+    第二天上午，你带王工上门做预防性检查。
+
+    发现 Carriage B 的驱动板固件版本也是旧的——差点就是下一个故障点。
+    一并升级后，小赵感到后怕：「还好你们来了……」
+
+    孙主任路过看到：「林经理，你这种负责任的态度，我记住了。」
+  effects:
+    - effect: mod_npc_trust
+      npc: "孙主任"
+      op: "+"
+      value: 10
+    - effect: set_flag
+      flag: preventive_done
+  choices:
+    - text: "谈谈维保续约的事"
+      next: seal_deal
+      conditions:
+        - check: flag
+          flag: director_promise
+    - text: "先回公司，等他们主动找我"
+      next: followup_later
+
+- id: followup_later
+  title: "等待"
+  speaker: "系统"
+  text: |
+    一周过去了，王科长没有来电话。
+
+    你主动打过去，对方说：「哦，林经理，我们这边流程还在走，
+    领导出差了，再等等。」
+
+    你知道这是什么信号——他们在跟 Varian 谈细节。
+    但是你没有足够的关系值推动这件事。
+  tags: ["待续"]
+  effects:
+    - effect: log
+      message: "关系值不足，无法推动续约。需要提升与关键 NPC 的关系。"
+  choices:
+    - text: "—— 未完待续 ——"
+      next: __END__
+      effects:
+        - effect: log
+          message: "📝 提示：重开游戏，试试其他选择路径。"
+
+- id: prepare_proposal
+  title: "方案准备"
+  speaker: "系统"
+  text: |
+    你回到公司，调出该医院过去 3 年的维修记录：
+    • MLC 故障占比 42%
+    • 平均响应时间 3.2 小时（合同承诺 4 小时）
+    • Monaco TPS 培训需求 2 次/年
+
+    数据在手，你知道怎么打这场仗。
+
+    但最终方案还需要一个关键信息：院长的预算审批周期是多久？
+    你只有知道了这个，才能卡在正确的时机提交方案。
+  effects:
+    - effect: mod_attr
+      attr: 商务敏感度
+      op: "+"
+      value: 8
+    - effect: set_flag
+      flag: prepared_data
+  choices:
+    - text: "约王科长喝咖啡，摸清预算节点"
+      next: seal_deal
+      conditions:
+        - check: npc_relation
+          npc: "王科长"
+          op: ">="
+          value: 30
+    - text: "直接提交方案（冒险）"
+      next: followup_later
+
+- id: __END__
+  title: "—— 游戏结束 ——"
+  speaker: ""
+  text: |
+    感谢试玩医科达售后服务销售 MUD。
+
+    当前版本只是演示骨架。你可以：
+    • 按 R 重新开始
+    • 按 Q 退出
+    • 或直接修改 plugins/elekta_service/scenes.yaml 扩展剧情
+  choices: []
