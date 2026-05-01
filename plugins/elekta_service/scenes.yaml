@@ -18,10 +18,13 @@
     - Versa HD 的 MLC 联锁是常见故障，但 "Carriage position error" 意味着可能需要换硬件
     - 今晚值班工程师是王工（资深）和小李（新人）
     - 这家医院的维保合同还有 3 个月到期，他们正在比价……
+
+    你获得了 1 点技能点，可用于学习新技能。
   tags: ["急诊", "关键决策"]
   on_enter:
-    - effect: set_flag
-      flag: emergency_triggered
+    - effect: add_skill_point
+      amount: 1
+      reason: 新游戏开始
   choices:
     - text: "立刻通知值班工程师王工出发"
       next: dispatch_engineer
@@ -154,27 +157,28 @@
     驱动板固件版本 < 3.2 时，长期运行后会出现电位器漂移。
 
     不换件的话，也可以远程指导医院物理师做一个固件升级 + 重新校准。
-    但这个方法有 30% 概率复发。
+    这需要你的直线加速器诊断技能作为支撑——成功了患者当天就能开始治疗。
+  # 进入此节点时进行一次技能判定（展示诊断结果）
+  roll:
+    skill: linac_diagnostics
+    difficulty: normal
+    label: "远程分析 MLC 日志"
+    exp_on_success: 30
+    exp_on_fail: 10
   choices:
-    - text: "远程指导物理师操作（赌一把）"
-      next: remote_fix
-      conditions:
-        - check: attr
-          attr: 技术能力
-          op: ">="
-          value: 35
+    - text: "远程指导物理师操作（依赖技能判定）"
+      # roll_success_node = 成功跳转节点（技能判定通过）
+      roll_success_node: remote_fix
+      roll_fail_node: remote_fix_partial
+      tags: ["roll:linac_diagnostics"]
       effects:
-        - effect: mod_attr
-          attr: 技术能力
-          op: "+"
-          value: 5
+        - effect: advance_time
+          hours: 1
     - text: "确认需要换件，带王工出发"
       next: dispatch_engineer
       effects:
-        - effect: mod_npc_relation
-          npc: "王科长"
-          op: "+"
-          value: 3
+        - effect: advance_time
+          hours: 1
 
 - id: remote_fix
   title: "远程指导"
@@ -191,13 +195,14 @@
     「林经理，太强了！省了一次现场费。」
 
     不过你也清楚——如果下次再复发，就没这么好运气了。
-  effects:
+    这次成功的远程诊断为你积累了宝贵经验。
+  on_enter:
     - effect: mod_npc_relation
       npc: "小赵（物理师）"
       op: "+"
       value: 15
     - effect: mod_attr
-      attr: 声望
+      attr: "声望"
       op: "+"
       value: 10
     - effect: set_flag
@@ -211,6 +216,41 @@
         - effect: advance_time
           hours: 8
     - text: "先这样，有问题再说"
+      next: followup_later
+      effects:
+        - effect: advance_time
+          hours: 6
+
+- id: remote_fix_partial
+  title: "远程指导（部分成功）"
+  speaker: "系统"
+  text: |
+    你尝试远程指导物理师小赵进行固件升级和校准……
+
+    操作到一半，小赵发现 Carriage B 也有轻微的漂移迹象，
+    两人手忙脚乱，最终只完成了部分校准。
+
+    MLC 恢复了运行，但精度只能达到 90%——勉强能用，但不如完美校准。
+    小赵说：「先这样吧，剩下的问题下次请你们现场来处理。」
+
+    你知道这是一个不完美的结果，但至少患者今天能开始治疗了。
+    不过这也意味着下次还需要再跑一趟。
+  on_enter:
+    - effect: mod_npc_relation
+      npc: "小赵（物理师）"
+      op: "+"
+      value: 5
+    - effect: set_flag
+      flag: remote_fix_partial_done
+  choices:
+    - text: "第二天必须上门做完整检查"
+      next: preventive_visit
+      effects:
+        - effect: set_flag
+          flag: must_follow_up
+        - effect: advance_time
+          hours: 8
+    - text: "等客户主动联系我们"
       next: followup_later
       effects:
         - effect: advance_time
@@ -450,6 +490,147 @@
     - text: "直接提交方案（冒险）"
       next: followup_later
 
+
+
+- id: deal_stalemate
+  title: "僵局"
+  speaker: "系统"
+  text: |
+    医院两边押注，你和 Varian 都耗着。
+
+    三个月过去了，没有签约，没有拒绝，只有无尽的「再等等」。
+
+    王科长私下跟你说：
+    「林经理，我们内部还没达成共识，
+    设备科想要低价，后勤想要稳妥，院长还没表态。」
+
+    你心里清楚——这不是真正的决策流程。
+    而是医院在用时间换空间，逼你降价。
+
+    又过了两个月。
+    你还在跟进，但 Varian 的销售也没闲着。
+    直到有一天，王科长打来电话：
+
+    「林经理，抱歉，我们决定暂缓这个项目。
+    设备科说今年预算不够，要等到明年再说。」
+
+    真相是：医院最后谁都没选，以「预算不足」为由
+    把整个项目冷冻了。
+
+    你和 Varian 都成了输家。
+    唯一赢的是医院——用最小的成本，把所有供应商的底牌都摸清了。
+  tags: ["坏结局", "战略失败"]
+  on_enter:
+    - effect: mod_attr
+      attr: "声望"
+      op: "-"
+      value: 8
+    - effect: set_flag
+      flag: ended_stalemate
+  choices:
+    - text: "继续下一局"
+      next: __END__
+
+- id: demo_presentation_botched
+  title: "演示事故"
+  speaker: "系统"
+  text: |
+    技术演示当天。
+
+    一切准备就绪——王工带着最新的 QA 数据，
+    小周准备了三套机型的对比资料。
+
+    孙主任带了五六个科室的人来听。
+    你正在讲解 MLC 精度调校流程，突然——
+
+    王工的平板死机了。
+
+    他尝试重启，但数据全部打不开。
+    「呃……系统出了点问题，稍等一下。」
+
+    尴尬的沉默持续了三分钟。
+    孙主任的脸色越来越难看。
+
+    重新启动后，数据倒是恢复了。
+    但演示节奏被打断，孙主任中途接了个电话就离开了。
+    后面的几位关键人也都陆续散了。
+
+    演示结束后，王工脸色铁青：
+    「林经理，演示前我说了要带备用设备。」
+
+    三天后，王科长通知你：
+    「林经理，这次演示院领导不太满意，
+    他们觉得我们准备不够充分。暂时搁置吧。」
+
+    你知道这不是真正的技术问题。
+    但销售丢掉的机会，永远会被归因到准备不足。
+  tags: ["坏结局", "内部信任崩塌"]
+  on_enter:
+    - effect: mod_attr
+      attr: "声望"
+      op: "-"
+      value: 10
+    - effect: set_flag
+      flag: ended_demo_botched
+  choices:
+    - text: "继续下一局"
+      next: __END__
+
+- id: deal_signed_reversal
+  title: "绝地逆转"
+  speaker: "系统"
+  text: |
+    你以为输了，但最后你赢了。
+
+    招标结果公示：医科达技术标第一，商务标落后 Varian 8 分。
+    综合排名：Varian 领先。
+
+    所有人都觉得结束了。
+
+    但第二天，孙主任紧急约你见面。
+
+    「林经理，有件事我要告诉你。」
+    他关上门，「昨晚我们接到通知，
+    Varian 的投标文件被查出有虚假成分——
+    他们的 SLA 条款里承诺的响应时间，
+    根本不是他们实际能做到的。」
+
+    「有人举报了？」你问。
+
+    「有人。评标委员会正在重新审查。」
+
+    一周后，Varian 被取消中标资格。
+    医科达递补中标。
+
+    签约仪式上，孙主任握着你的手：
+    「林经理，看来你们说的那句'原厂认证才是保障'，
+    是有道理的。」
+
+    你笑了笑：「孙主任，我们只是说了实话。」
+
+    但你知道，Varian 的投标文件有问题，
+    但真正让这件事曝光的，是你之前提供给
+    评标委员会的对比资料里，那一条不起眼的备注。
+
+    有时候，赢不在于打倒对手——
+    而在于让对手自己犯错。
+  tags: ["好结局", "逆转胜"]
+  on_enter:
+    - effect: mod_attr
+      attr: "声望"
+      op: "+"
+      value: 15
+    - effect: mod_attr
+      attr: "技术能力"
+      op: "+"
+      value: 10
+    - effect: set_flag
+      flag: ended_reversal
+  choices:
+    - text: "继续下一局"
+      next: __END__
+
+
 - id: __END__
   title: "—— 游戏结束 ——"
   speaker: ""
@@ -459,5 +640,1135 @@
     当前版本只是演示骨架。你可以：
     • 按 R 重新开始
     • 按 Q 退出
-    • 或直接修改 plugins/elekta_service/scenes.yaml 扩展剧情
+    • 或直接修改 plugins/elektra_service/scenes.yaml 扩展剧情
   choices: []
+
+# ══════════════════════════════════════════════════════
+# 新章节：完整销售流程（初次接触 → 签约/丢单）
+# ══════════════════════════════════════════════════════
+
+- id: first_visit
+  title: "初次拜访"
+  speaker: "王科长（设备科）"
+  text: |
+    周二上午，你按约定来到 XX 省肿瘤医院设备科。
+
+    王科长 45 岁，军人出身，说话直接。他在纸上画了一条线：
+    「林经理，我们现有机队：2 台 Versa HD，1 台 Infinity。
+    医科达的维保合同下季度到期，院里在重新评估。」
+
+    他抬起眼皮看你：「你们有什么方案？」
+
+    你注意到他桌上放着 Varian 的宣传册——他们已经在接触了。
+    这是一场争分夺秒的卡位战。
+  tags: ["销售", "初次接触"]
+  on_enter:
+    - effect: set_flag
+      flag: first_visit_done
+    - effect: add_skill_point
+      amount: 1
+      reason: 初次拜访客户
+  choices:
+    - text: "先了解客户实际需求，不急着推产品"
+      next: needs_discovery
+      tags: ["推荐"]
+      effects:
+        - effect: mod_npc_relation
+          npc: "王科长"
+          op: "+"
+          value: 3
+    - text: "直接介绍医科达维保方案的优势"
+      next: premature_pitch
+      effects:
+        - effect: advance_time
+          hours: 1
+    - text: "观察办公室，寻找共同话题建立关系"
+      next: build_rapport
+      effects:
+        - effect: advance_time
+          hours: 1
+
+- id: needs_discovery
+  title: "需求诊断"
+  speaker: "王科长"
+  text: |
+    「王科长，我不急着推方案。」
+
+    你拉过一把椅子坐下，「我想先了解一件事——
+    院里对这次维保更新，最关心的是什么？
+    是预算、质量、响应速度，还是别的？」
+
+    王科长沉默了几秒，然后身体微微前倾：
+    「你问得对。」他压低声音，
+    「今年上面压了 15% 的设备预算，但我们放疗科的患者量涨了 20%。
+    设备不能停，但钱要省着花。」
+
+    他顿了顿：「还有一个问题——Varian 的 TrueBeam 报价比你们低 18%。
+    我不是要压你价格，我只是需要知道医科达值多少。」
+
+    这就是核心信息：预算敏感 + 质量不能降 + 已经有竞品压力。
+  tags: ["销售", "情报"]
+  on_enter:
+    - effect: set_flag
+      flag: budget_pressure_known
+    - effect: set_flag
+      flag: varian_price_known
+  roll:
+    skill: negotiation
+    difficulty: normal
+    label: "需求诊断访谈"
+    exp_on_success: 40
+    exp_on_fail: 15
+  choices:
+    - text: "提出'按次付费'弹性方案，降低预算压力"
+      next: flexible_pricing
+      tags: ["roll:negotiation"]
+      roll_success_node: flexible_pricing
+      roll_fail_node: flexible_pricing_difficult
+      effects:
+        - effect: advance_time
+          hours: 2
+    - text: "用质量数据证明医科达的性价比"
+      next: quality_argument
+      effects:
+        - effect: advance_time
+          hours: 2
+    - text: "暂时不做方案，先约定下次演示时间"
+      next: schedule_demo
+      effects:
+        - effect: advance_time
+          hours: 1
+
+- id: premature_pitch
+  title: "过早推介"
+  speaker: "王科长"
+  text: |
+    你花了 20 分钟介绍医科达的技术优势——
+    剂量率稳定性、MLC 精度、配套 TPS……
+
+    王科长听完后只是点点头，把桌上的 Varian 册子往你方向推了推：
+    「林经理，你们的技术我信。但技术好不一定选你们。」
+
+    他站起身：「这样吧，下周我们有个内部讨论会，
+    你把正式方案带过来，咱们坐下来谈。」
+
+    这是礼节性结束，没有获得任何关键信息。
+    但至少有了下次拜访的理由。
+  on_enter:
+    - effect: mod_npc_relation
+      npc: "王科长"
+      op: "-"
+      value: 2
+    - effect: advance_time
+      hours: 1
+  choices:
+    - text: "回去立刻准备详细方案和竞品对比分析"
+      next: prepare_proposal
+      effects:
+        - effect: set_flag
+          flag: premature_pitch_done
+    - text: "在离开前再试着问问预算和招标时间节点"
+      next: needs_discovery
+      effects:
+        - effect: advance_time
+          hours: 1
+
+- id: build_rapport
+  title: "关系建立"
+  speaker: "系统"
+  text: |
+    你的目光落在王科长桌上的一张照片上——
+    一辆军绿色的越野车，背景是戈壁。
+
+    「王科长，这车是您去新疆的时候拍的？」
+    他抬起头，眼睛里闪过一丝光：「你认出来了？
+    那个是塔克拉玛干，我 2008 年援疆时候拍的。」
+
+    气氛瞬间不一样了。
+
+    接下来的半小时，你们聊了很多——
+    他当兵的经历、转业后进医院的机缘、
+    对放疗设备行业的看法……
+
+    等你离开的时候，他亲自送你到电梯口：
+    「小林，下次来直接找我，不用秘书预约。」
+  tags: ["关系", "正面"]
+  on_enter:
+    - effect: mod_npc_relation
+      npc: "王科长"
+      op: "+"
+      value: 10
+    - effect: mod_npc_trust
+      npc: "王科长"
+      op: "+"
+      value: 5
+    - effect: set_flag
+      flag: rapport_built
+    - effect: advance_time
+      hours: 2
+  choices:
+    - text: "趁热打铁，约下次见面聊维保方案"
+      next: needs_discovery
+    - text: "先回去，下次带礼物再来"
+      next: schedule_demo
+      effects:
+        - effect: advance_time
+          hours: 1
+
+- id: flexible_pricing
+  title: "弹性定价方案"
+  speaker: "王科长"
+  text: |
+    「王科长，我有个想法，不一定适合你们，但我想试试。」
+
+    你把笔记本推过去：「如果把固定维保费，
+    拆成'基础保障费 + 按次服务费'两个部分，
+    基础费比 Varian 报价还低 12%，
+    按次费用明码标价，你们按需消费。」
+
+    王科长拿起笔，在纸上算了几行：
+    「你这个方案……有点意思。」
+    他抬起头：「但按次服务，你们响应速度跟得上吗？」
+
+    这是关键问题。他在测试你的服务能力。
+  tags: ["销售", "谈判", "方案"]
+  on_enter:
+    - effect: set_flag
+      flag: flexible_pricing_accepted
+    - effect: mod_npc_relation
+      npc: "王科长"
+      op: "+"
+      value: 5
+  choices:
+    - text: "\"我们有 7×24h 值班工程师，2 小时到现场。写进合同里。\""
+      next: demo_setup
+      effects:
+        - effect: advance_time
+          hours: 1
+    - text: "\"按次服务我们会更用心，因为那是增量收入。\""
+      next: service_argument
+      effects:
+        - effect: advance_time
+          hours: 1
+
+- id: flexible_pricing_difficult
+  title: "弹性定价（困难）"
+  speaker: "王科长"
+  text: |
+    你介绍完弹性定价方案，王科长听完后没有立刻回应。
+
+    「小林，你这个思路是好的。但是——」
+    他把方案推回来：「我们院财务的审计逻辑，
+    不支持这种'基础费 + 按次'的结构。
+    所有费用必须归入单一合同类目。」
+
+    他叹了口气：「而且说实话，
+    你们的价格体系我还没完全看懂，
+    需要回去让财务评估一下。」
+
+    方向是对的，但时机不对。
+  tags: ["销售", "挫折"]
+  on_enter:
+    - effect: advance_time
+      hours: 1
+  choices:
+    - text: "回去准备标准维保方案，下次带财务一起"
+      next: prepare_proposal
+    - text: "先安排技术演示，用数据说服他们"
+      next: demo_setup
+
+- id: quality_argument
+  title: "质量论证"
+  speaker: "王科长"
+  text: |
+    「王科长，我不跟你谈价格。我跟你谈 TCO。」
+
+    你打开平板，调出数据：
+    「Varian 的 TrueBeam 故障率比我们高 23%，
+    平均宕机时间 4.7 小时，你们的临床压力这么大，
+    宕机一天损失多少治疗收益？」
+
+    王科长不说话了。
+
+    你继续：「我们不是最便宜的，
+    但我们是'宕机时间最短'的供应商。
+    这 4.7 小时换成患者治疗收益，
+    够你们付我们的维保差价了。」
+
+    他终于点头：「有道理。安排一次技术演示吧。」
+  tags: ["销售", "数据"]
+  on_enter:
+    - effect: set_flag
+      flag: quality_argument_won
+    - effect: mod_attr
+      attr: "商务敏感度"
+      op: "+"
+      value: 5
+    - effect: advance_time
+      hours: 2
+  choices:
+    - text: "安排技术演示，带资深工程师"
+      next: demo_setup
+
+- id: service_argument
+  title: "服务论证"
+  speaker: "王科长"
+  text: |
+    「按次服务，你们反而会更用心？」
+
+    王科长笑了笑：「这个逻辑有点意思，说说看。」
+
+    「固定维保合同里，供应商是被动的——
+    签了合同，有些小问题医院不愿意叫，
+    等小问题拖成大问题再处理，双方都累。
+    按次付费，医院有主动权，我们有动力随叫随到。」
+
+    王科长点了点头：「这个思路我喜欢。
+    但我要看看你们实际的服务记录，再定。」
+  tags: ["销售", "服务"]
+  on_enter:
+    - effect: advance_time
+      hours: 1
+  choices:
+    - text: "安排技术演示，展示服务能力和响应速度"
+      next: demo_setup
+    - text: "先回去，等他看完服务记录再约"
+      next: schedule_demo
+
+- id: schedule_demo
+  title: "约定演示"
+  speaker: "系统"
+  text: |
+    离开医院后，你整理了医院的联系方式和关键人信息。
+
+    这次拜访虽然没有直接进入谈判阶段，
+    但你建立了联系，了解了预算压力，
+    也为下次拜访埋下了伏笔。
+  on_enter:
+    - effect: advance_time
+      hours: 1
+  choices:
+    - text: "回去准备技术演示资料"
+      next: demo_setup
+      effects:
+        - effect: set_flag
+          flag: demo_scheduled
+    - text: "先跟进 Varian 的动向（获取竞品情报）"
+      next: competitive_intel
+
+- id: competitive_intel
+  title: "竞品情报"
+  speaker: "系统"
+  text: |
+    你通过业内朋友打听了一下：
+
+    **三家主要竞品已经盯上了这家医院。**
+
+    🔴 **卓亚（上海卓亚医疗）** — 2008年成立，行业最老牌。
+    已经在该院放疗科做过技术交流，
+    主打"医科达机型我们是原厂以外经验最丰富的"。
+    报价预计比医科达低 25-35%，但合同条款严格。
+
+    🟡 **众泰和（北京众泰合）** — 2024年刚被环球医疗收购，
+    资本入场，正在华东区大规模扩张。
+    他们打法激进：买 3 年送 1 年、账期可谈。
+    背后是国企资金，公立医院客户信任度上升。
+
+    🟢 **鸿阳（上海鸿阳）** — 价格杀手。
+    已在周边两家县级医院签了维保合同，
+    报价只有医科达的 5-6 折。
+    但技术积累浅，核心部件维修能力存疑。
+
+    **你注意到了关键细节——**
+    卓亚的工程师团队有 30 多人，其中 20 名 5 年以上经验；
+    众泰和背后有环球医疗的国企资源；
+    鸿阳则擅长打价格战，在招标中常以最低价入围。
+
+    三家策略各不相同，你必须分而治之。
+  tags: ["情报", "竞品"]
+  on_enter:
+    - effect: mod_attr
+      attr: "商务敏感度"
+      op: "+"
+      value: 5
+    - effect: set_flag
+      flag: competitive_intel_collected
+  choices:
+    - text: "针对卓亚的技术优势，准备医科达原厂认证反击方案"
+      next: zhuoya_encounter
+    - text: "了解众泰和的资本牌，想好应对国企背书的策略"
+      next: zhongtaihe_capital
+    - text: "先摸清鸿阳的价格底线，知己知彼"
+      next: hongyang_price_war
+    - text: "收集完情报，立刻开始准备技术演示"
+      next: demo_setup
+
+- id: zhuoya_encounter
+  title: "卓亚登门"
+  speaker: "系统"
+  text: |
+    业内朋友传来消息：卓亚的销售已经见过孙主任了。
+
+    你赶紧约孙主任见面。他直言不讳：
+    「林经理，卓亚的人上周来过了。
+    他们说——他们修 Versa HD 的经验比任何第三方都多，
+    而且便宜 30%。」
+
+    他拿出一张名片：「上海卓亚医疗科技有限公司，
+    2008年就开始做医科达维保了，工程师都持证上岗。」
+
+    你接过名片，心里清楚：
+    卓亚说的是真的——他们确实是医科达机型最强的第三方。
+    但"持证上岗"和"原厂认证"是两回事。
+
+    孙主任问：「林经理，你们和卓亚比，优势在哪？」
+  tags: ["竞品", "卓亚", "关键对话"]
+  on_enter:
+    - effect: set_flag
+      flag: zhuoya_encountered
+    - effect: advance_time
+      hours: 1
+  choices:
+    - text: "\"我们提供的是医科达原厂认证，原装备件，原厂QA流程。卓亚是第三方，出了问题责任归属不清。\""
+      next: demo_setup
+      effects:
+        - effect: mod_attr
+          attr: "商务敏感度"
+          op: "+"
+          value: 8
+        - effect: mod_attr
+          attr: "competitor_zhuoya"
+          op: "-"
+          value: 15
+        - effect: mod_npc_relation
+          npc: "孙主任"
+          op: "+"
+          value: 5
+    - text: "\"卓亚便宜30%，但他们的备件是翻新的，不是原装的。您愿意承担这个风险吗？\""
+      next: demo_setup
+      effects:
+        - effect: mod_attr
+          attr: "技术能力"
+          op: "+"
+          value: 5
+        - effect: mod_attr
+          attr: "competitor_zhuoya"
+          op: "-"
+          value: 8
+    - text: "\"价格和服务是相关的，孙主任。出了问题没人担责，比多花点钱麻烦得多。\""
+      next: demo_setup
+      effects:
+        - effect: mod_npc_relation
+          npc: "孙主任"
+          op: "+"
+          value: 5
+        - effect: mod_attr
+          attr: "competitor_zhuoya"
+          op: "+"
+          value: 5
+
+- id: hongyang_price_war
+  title: "鸿阳的价格战"
+  speaker: "系统"
+  text: |
+    你托人打听到了鸿阳的底价：
+    维保合同报价只有医科达的 **55%**，也就是打5.5折。
+    但合同条款很紧——不包含加速管和磁控管，
+    这两项是易耗品，一旦出问题需要单独付费。
+
+    鸿阳的销售策略是：先用低价切入，
+    等医院依赖上他们的服务后，再慢慢涨费用。
+
+    业内说鸿阳最擅长的招数是：
+    「先用 3 年合同锁定医院，第 2 年开始每年涨价 10%。」
+
+    更关键的是：鸿阳的备件库很小，
+    一旦需要换核心部件，等件时间可能超过 2 周。
+    而放疗科一天都停不起。
+  tags: ["竞品", "鸿阳", "情报"]
+  on_enter:
+    - effect: set_flag
+      flag: hongyang_price_known
+    - effect: advance_time
+      hours: 1
+  choices:
+    - text: "\"鸿阳的报价低，但那是建立在牺牲质量的前提上。备件翻新的风险，您愿意承担吗？\""
+      next: demo_setup
+      effects:
+        - effect: mod_attr
+          attr: "技术能力"
+          op: "+"
+          value: 5
+        - effect: mod_attr
+          attr: "商务敏感度"
+          op: "+"
+          value: 3
+        - effect: mod_attr
+          attr: "competitor_hongyang"
+          op: "-"
+          value: 12
+    - text: "\"价格低不一定省钱。算算总拥有成本（TCO）——鸿阳的备件另付费，停了机损失更大。\""
+      next: demo_setup
+      effects:
+        - effect: mod_attr
+          attr: "商务敏感度"
+          op: "+"
+          value: 5
+        - effect: mod_attr
+          attr: "competitor_hongyang"
+          op: "-"
+          value: 8
+    - text: "\"鸿阳在周边医院的口碑您可以打听一下——出问题后响应速度怎么样。\""
+      next: demo_setup
+      effects:
+        - effect: mod_attr
+          attr: "关系值"
+          op: "+"
+          value: 3
+        - effect: mod_attr
+          attr: "competitor_hongyang"
+          op: "+"
+          value: 5
+
+- id: zhongtaihe_capital
+  title: "众泰和的资本牌"
+  speaker: "系统"
+  text: |
+    你调查了众泰和的背景——
+
+    **北京众泰合医疗器械有限公司**
+    已被**环球医疗（UMC）**收购。
+    环球医疗是国企，在全国各地有大量公立医院客户。
+
+    这意味着：众泰和现在可以打「国企背书」这张牌。
+    在政府采购中，有国企背景的供应商往往更受信任。
+
+    更棘手的是：众泰和现在推出
+    「**3年维保合同，第4年免费续约**」的套餐。
+    这相当于用2/3的价格买了4年的服务，
+    对于预算敏感的医院来说诱惑很大。
+
+    但你也注意到：众泰和的技术积累并不深，
+    他们的工程师团队规模有限，
+    一旦签了太多医院，服务质量可能会被稀释。
+  tags: ["竞品", "众泰和", "情报"]
+  on_enter:
+    - effect: set_flag
+      flag: zhongtaihe_capital_known
+    - effect: advance_time
+      hours: 1
+  choices:
+    - text: "\"众泰和买3年送1年，但您算过没有——续约时他们随时可以涨价。\""
+      next: demo_setup
+      effects:
+        - effect: mod_attr
+          attr: "商务敏感度"
+          op: "+"
+          value: 8
+        - effect: mod_attr
+          attr: "competitor_zhongtaihe"
+          op: "-"
+          value: 10
+    - text: "\"国企背景不等于技术实力。设备出问题，负责任的是签字的工程师，不是背后的资本。\""
+      next: demo_setup
+      effects:
+        - effect: mod_attr
+          attr: "技术能力"
+          op: "+"
+          value: 5
+        - effect: mod_attr
+          attr: "competitor_zhongtaihe"
+          op: "-"
+          value: 8
+    - text: "\"众泰和现在扩张太快，签的医院多，工程师顾不过来，您觉得会先保障谁的服务？\""
+      next: demo_setup
+      effects:
+        - effect: mod_attr
+          attr: "关系值"
+          op: "+"
+          value: 5
+        - effect: mod_attr
+          attr: "competitor_zhongtaihe"
+          op: "+"
+          value: 5
+
+- id: demo_setup
+  title: "技术演示准备"
+  speaker: "系统"
+  text: |
+    你回到公司，拉上王工（资深工程师）
+    和市场部的小周，开始准备演示方案。
+
+    **主竞品已经不是原厂——而是三家第三方。**
+
+    演示核心：医科达 Versa HD vs 三方竞品维保服务
+    关键技术差异点（针对卓亚、众泰和、鸿阳）：
+
+    📌 **原厂认证 vs 第三方资质**
+    - 医科达原厂认证工程师（每台上岗证书）
+    - 卓亚自称"资深"，但无原厂授权
+    - 备件来源：原装备件 vs 二手翻新件（鸿阳常用）
+
+    📌 **MLC 精度保障**
+    - 医科达：原厂调校 ±0.5mm，有原厂 QA 流程
+    - 卓亚：±0.6mm（非原厂调校，精度下降）
+    - 鸿阳：无原厂工具，实际精度存疑
+
+    📌 **紧急响应时效**
+    - 医科达：2 小时到场承诺（合同明确）
+    - 卓亚：4-6 小时（二线城市覆盖不足）
+    - 众泰和：刚收购扩张，响应SLA不稳定
+
+    📌 **核心部件来源**
+    - 医科达：原厂磁控管、加速管，可溯源
+    - 鸿阳：采购二手/翻新核心部件，无原厂质保
+    - 卓亚：自行修复件为主
+
+    王工说：「小林，这次竞品不是 Varian，是第三方。
+    我们最大的武器是——出了问题责任归属清楚。」
+  tags: ["演示", "准备"]
+  on_enter:
+    - effect: mod_attr
+      attr: "技术能力"
+      op: "+"
+      value: 5
+    - effect: set_flag
+      flag: demo_prepared
+  roll:
+    skill: tps_operation
+    difficulty: normal
+    label: "演示准备充分度"
+    exp_on_success: 30
+    exp_on_fail: 10
+  choices:
+    - text: "带上 Monaco 计划系统 + 实际临床案例演示"
+      next: demo_presentation
+      tags: ["roll:tps_operation"]
+      roll_success_node: demo_presentation
+      roll_fail_node: demo_presentation_rushed
+    - text: "准备 PPT + 理论讲解（对手没有原厂案例，我用真实数据反击）"
+      next: demo_presentation_rushed
+      effects:
+        - effect: advance_time
+          hours: 4
+    - text: "准备 PPT + 理论讲解，不做实操演示"
+      next: demo_presentation_rushed
+      effects:
+        - effect: advance_time
+          hours: 2
+
+- id: demo_presentation
+  title: "技术演示"
+  speaker: "孙主任、王科长、物理师团队"
+  text: |
+    演示当天，放疗科会议室坐了 7 个人：
+    孙主任、王科长、3 名物理师、2 名临床医生。
+
+    你用 Monaco 跑了一个真实病例——
+    鼻咽癌调强放疗（IMRT），靶区紧邻脑干。
+
+    「大家看，这里医科达的剂量跌落非常陡峭，
+    脑干剂量比 TrueBeam 低 15%，而靶区覆盖一样。」
+    物理师们互相交换了眼神——他们懂这里的技术含量。
+
+    王工接过话：「我再补充一个数据——
+    这是我们预测性维护系统上周在 XX 医院的案例，
+    故障发生前 48 小时就发出了预警，
+    医院提前安排好了备件，没有影响任何治疗。」
+
+    会议室安静了几秒。
+    孙主任开口：「这个系统，我想详细了解一下。」
+  tags: ["演示", "关键"]
+  on_enter:
+    - effect: mod_npc_relation
+      npc: "孙主任"
+      op: "+"
+      value: 8
+    - effect: mod_npc_trust
+      npc: "孙主任"
+      op: "+"
+      value: 5
+    - effect: set_flag
+      flag: demo_succeeded
+    - effect: advance_time
+      hours: 3
+  choices:
+    - text: "趁热打铁，约定招标应答时间节点"
+      next: bid_invitation
+    - text: "孙主任被说服了，但还需要院长点头"
+      next: "院长层攻关"
+
+- id: demo_presentation_rushed
+  title: "技术演示（仓促版本）"
+  speaker: "孙主任、王科长"
+  text: |
+    仓促准备的 PPT 演示，没有实操案例，
+    只能讲理论数据，缺少临床说服力。
+
+    孙主任听完后点点头：
+    「数据听起来不错，但我想看实际案例。
+    能不能安排一次到我们科室现场看看？」
+
+    王科长在旁边补充：
+    「演示效果一般，但态度可以。
+    下周安排一次现场走访吧。」
+  tags: ["演示", "弱"]
+  on_enter:
+    - effect: advance_time
+      hours: 2
+  choices:
+    - text: "立刻安排现场走访，争取翻盘机会"
+      next: "现场走访"
+    - text: "回去准备案例，下次再来"
+      next: "现场走访"
+
+- id: 现场走访
+  title: "现场走访"
+  speaker: "系统"
+  text: |
+    三天后，你带王工来到放疗科现场。
+
+    王工在机房里待了 2 个小时，
+    查看了机器的日志和维修记录，
+    还和物理师团队做了深度技术交流。
+
+    这次现场的沟通效果很好——
+    物理师们发现王工是真的懂技术，
+    对医科达的信任度明显提升。
+  on_enter:
+    - effect: mod_npc_relation
+      npc: "小赵（物理师）"
+      op: "+"
+      value: 8
+    - effect: mod_npc_trust
+      npc: "王工"
+      op: "+"
+      value: 5
+    - effect: advance_time
+      hours: 4
+  choices:
+    - text: "孙主任答应在招标会上投医科达一票"
+      next: bid_invitation
+
+- id: 院长层攻关
+  title: "院长层攻关"
+  speaker: "系统"
+  text: |
+    过了几天，你通过孙主任引荐，
+    终于约到了分管设备的副院长。
+
+    副院长是肿瘤学专家出身，对放疗设备非常懂行。
+    他问了你三个问题：
+    1. 医科达的 MLC 寿命数据是多少？
+    2. 你们的远程诊断系统能否对接我们的 HIS？
+    3. 竞品报价多少，你们能匹配吗？
+
+    你一一作答，副院长听完后若有所思。
+  tags: ["销售", "高层"]
+  on_enter:
+    - effect: advance_time
+      hours: 2
+  choices:
+    - text: "提出包含临床培训服务的打包方案"
+      next: negotiation_showdown
+      effects:
+        - effect: advance_time
+          hours: 1
+    - text: "等院长主动联系（被动等待）"
+      next: negotiation_showdown
+
+- id: bid_invitation
+  title: "招标邀请"
+  speaker: "王科长"
+  text: |
+    三周后，王科长来电话：
+
+    「小林，我们正式发出招标邀请了。
+    标书你们应该收到了——技术标和商务标两部分，
+    技术标权重 60%，商务标 40%。」
+
+    「标书里有个关键条款：投标方需提供
+    最近 12 个月在本区域的客户满意度评分。」
+
+    你翻出资料：医科达华东区平均 4.7/5.0，
+    Varian 是 4.2/5.0。技术上我们占优。
+
+    但商务标他们便宜 18%，这是硬伤。
+  tags: ["招标", "关键节点"]
+  on_enter:
+    - effect: set_flag
+      flag: bid_invited
+    - effect: advance_time
+      hours: 2
+  choices:
+    - text: "全力准备技术标，确保 60% 技术分不失"
+      next: bid_submission
+    - text: "同时准备商务标，但突出服务差异化"
+      next: bid_submission
+
+- id: bid_submission
+  title: "投标提交"
+  speaker: "系统"
+  text: |
+    投标截止日前夜，你和王工在公司会议室做最后检查。
+
+    技术标文件：淋琅满目的临床数据、故障率对比、
+    客户满意度报告、预防性维护方案……
+
+    商务标文件：报价单、服务范围明细、SLA 承诺……
+
+    **三家竞品的底价已经摸清了：**
+
+    📌 卓亚：比医科达低 28%，含全服务条款，
+       但关键备件（加速管/磁控管）需另计费
+
+    📌 众泰和：比医科达低 32%，买3年送1年，
+       但技术评分偏低，依赖价格取胜
+
+    📌 鸿阳：比医科达低 45%，最低价，
+       但合同不含核心部件，另付费
+
+    王工说：「技术标我们没问题，但商务标……
+    三家一起压价，你打算怎么应对？」
+  tags: ["招标", "提交"]
+  on_enter:
+    - effect: advance_time
+      hours: 3
+  roll:
+    skill: negotiation
+    difficulty: hard
+    label: "标书准备质量"
+    exp_on_success: 50
+    exp_on_fail: 20
+    skill_point_on_success: 1
+  choices:
+    - text: "技术标突出'总拥有成本（TCO）'概念，抵消价格差距"
+      next: negotiation_showdown
+
+    - text: "\"我们不跟进价格战，保持技术优势，等待对方失误\"（消耗战）"
+      next: deal_stalemate
+      conditions:
+        - check: npc_relation
+          npc: "王科长"
+          op: ">="
+          value: 25
+      tags: ["roll:negotiation"]
+      roll_success_node: negotiation_showdown
+      roll_fail_node: negotiation_showdown_difficult
+    - text: "主动联系王科长，表示可以在商务标上做优惠"
+      next: "商务折扣谈判"
+      effects:
+        - effect: advance_time
+          hours: 1
+
+- id: 商务折扣谈判
+  title: "商务折扣谈判"
+  speaker: "王科长"
+  text: |
+    你主动约王科长喝咖啡：
+
+    「王科长，我们的报价可能不是最低的，
+    但我想问一下——医院在评标的时候，
+    最低价是唯一标准吗？」
+
+    王科长笑了笑：
+    「当然不是。但如果价格差超过 15%，
+    评标委员会需要有足够的理由说服自己。」
+
+    你立刻说：「我这边可以申请一个额外优惠——
+    续约客户专属折扣，比首次签约低 8%。」
+  tags: ["谈判", "商务"]
+  on_enter:
+    - effect: advance_time
+      hours: 1
+  choices:
+    - text: "申请这个折扣，全力推进签约"
+      next: negotiation_showdown
+      effects:
+        - effect: advance_time
+          hours: 1
+
+- id: negotiation_showdown
+  title: "最终谈判"
+  speaker: "系统"
+  text: |
+    招标结果公示前一天。
+
+    技术标：医科达 58/60，Varian 52/60（我们大幅领先）
+    商务标：Varian 38/40，医科达 32/40（差距存在）
+
+    综合排名：医科达领先 2 分，但 Varian 在商务标上有投诉空间。
+
+    王科长打来电话：
+    「林经理，Varian 对你们的商务标提出了质疑，
+    说你们的 SLA 条款有歧义。
+    评标委员会让我来问你——你们能不能签一个补充承诺函？」
+  tags: ["关键", "谈判"]
+  on_enter:
+    - effect: set_flag
+      flag: negotiation_final
+    - effect: advance_time
+      hours: 2
+  roll:
+    skill: negotiation
+    difficulty: very_hard
+    label: "最终 SLA 谈判"
+    exp_on_success: 80
+    exp_on_fail: 30
+    skill_point_on_success: 1
+  choices:
+    - text: "\"可以，我们追加响应时间承诺：2 小时到现场，写进合同。\""
+      next: deal_signed
+      tags: ["roll:negotiation"]
+      roll_success_node: deal_signed
+      roll_fail_node: deal_lost
+    - text: "\"这个条款我们需要内部讨论，明天回复您\"（保守应对）"
+      next: deal_lost
+      effects:
+        - effect: advance_time
+          hours: 4
+
+- id: negotiation_showdown_difficult
+  title: "谈判困难"
+  speaker: "系统"
+  text: |
+    TCO 的论证没有打动评标委员会。
+    他们坚持按纯商务评分，你的价格劣势暴露无遗。
+
+    王科长打来电话，语气里有些遗憾：
+    「林经理，技术标你们赢了很多，
+    但商务标差了 6 分……这分差太大了，
+    我也没法操作。」
+
+    「但你们别放弃，」他顿了顿，
+    「这次招标是先签 1 年试试，如果服务好，
+    明年我们再谈长期合同。」
+  tags: ["坏结局", "谈判失败"]
+  choices:
+    - text: "\"我接受这个结果，1 年合同我们全力以赴。\""
+      next: deal_signed_1year
+    - text: "\"这结果我不能接受，Varian 的 SLA 我们也有异议。\""
+      next: deal_lost
+    - text: "\"我掌握了 Varian 投标文件造假的证据，要求重新审查。\""
+      next: deal_signed_reversal
+      conditions:
+        - check: flag
+          flag: zhuoya_encountered
+      effects:
+        - effect: set_flag
+          flag: has_varian_evidence
+
+- id: deal_signed
+  title: "签约成功"
+  speaker: "系统"
+  text: |
+    招标结果公示：医科达综合排名第一。
+
+    一周后，维保合同签署。
+    3 年全包，总价 ¥2.8M/年，
+    包含：2 小时响应 SLA、4 次/年临床应用培训、
+    1 台备用 MLC 驱动板（免费存放）。
+
+    王科长在签字仪式上拍了拍你的肩：
+    「小林，这合同签得不轻松。
+    你们的技术和服务，值得这个价。」
+
+    孙主任从旁边走过：
+    「下次有问题，随叫随到啊。」
+
+    你知道这一单来之不易。
+    但医科达在中国放疗市场的口碑，就是这样一点一点赢回来的。
+  tags: ["好结局", "通关"]
+  on_enter:
+    - effect: mod_attr
+      attr: "声望"
+      op: "+"
+      value: 25
+    - effect: mod_attr
+      attr: "商务敏感度"
+      op: "+"
+      value: 15
+    - effect: set_flag
+      flag: contract_signed
+    - effect: log
+      message: "🏆 成就解锁：医科达售后服务签约！"
+  choices:
+    - text: "这只是开始……"
+      next: __END__
+
+- id: deal_signed_1year
+  title: "1 年合同（次优结局）"
+  speaker: "系统"
+  text: |
+    最终，你们签下了 1 年合同，总价 ¥980K。
+
+    这不是你们想要的结果，但至少保住了这个客户。
+    Varian 在这一局赢了价格，但输了临床口碑。
+
+    1 年后，当他们的设备出了问题，
+    王科长会想起这次的技术演示，
+    会记得王工的专业，物理师小赵的信任。
+
+    下一份合同，才是真正的主战场。
+  tags: ["次优结局"]
+  on_enter:
+    - effect: mod_attr
+      attr: "声望"
+      op: "+"
+      value: 10
+    - effect: set_flag
+      flag: contract_1year_signed
+  choices:
+    - text: "1 年后继续跟进……"
+      next: __END__
+
+- id: deal_lost
+  title: "丢单"
+  speaker: "系统"
+  text: |
+    三家竞品，最终有一家拿到了这份合同。
+
+    你后来打听清楚了——
+    谁的好感度最高，谁就在这场博弈中笑到最后。
+  tags: ["坏结局"]
+  on_enter:
+    - effect: mod_attr
+      attr: "声望"
+      op: "-"
+      value: 5
+  choices:
+    # 卓亚好感度最高 → 卓亚赢
+    - text: "🏆 卓亚以技术优势 + 价格优势拿下这一局"
+      next: deal_lost_zhuoya
+      conditions:
+        - check: competitor_favor
+          competitor: zhuoya
+          op: ">"
+          value: 50
+        - check: competitor_favor
+          competitor: zhuoya
+          op: ">"
+          competitor_ref: hongyang
+          value: 0
+      effects:
+        - effect: set_flag
+          flag: lost_to_zhuoya
+
+    # 众泰和好感度最高 → 众泰和赢
+    - text: "🏆 众泰和以国企背书 + 账期优势拿下这一局"
+      next: deal_lost_zhongtaihe
+      conditions:
+        - check: competitor_favor
+          competitor: zhongtaihe
+          op: ">"
+          value: 50
+        - check: competitor_favor
+          competitor: zhongtaihe
+          op: ">"
+          competitor_ref: hongyang
+          value: 0
+      effects:
+        - effect: set_flag
+          flag: lost_to_zhongtaihe
+
+    # 鸿阳好感度最高 → 鸿阳赢（低价最敏感的客户）
+    - text: "🏆 鸿阳以绝对低价笑到最后"
+      next: deal_lost_hongyang
+      conditions:
+        - check: competitor_favor
+          competitor: hongyang
+          op: ">="
+          value: 50
+      effects:
+        - effect: set_flag
+          flag: lost_to_hongyang
+
+- id: deal_lost_zhuoya
+  title: "卓亚赢了"
+  speaker: "系统"
+  text: |
+    卓亚笑到了最后。
+
+    他们以"最懂医科达机型"的技术形象拿下了孙主任的信任，
+    再加上 28% 的价格优势，最终胜出。
+
+    签约当天，卓亚的销售总监亲自到场，
+    和院长握手、合影、上台致辞。
+
+    你后来听说，卓亚甚至拿到了医科达原厂工程师的联系方式，
+    想挖角，但被婉拒了。
+
+    「他们确实懂行。」王工评价道，语气里带着一丝无奈。
+
+    王科长在微信上给你发了一条消息：
+    「林经理，下次有机会再合作。
+    你们的技术没问题，但这次价格差太多了。」
+
+    你知道这不是你的失败——
+    卓亚是整个市场上最难打的对手，2008年的积累不是白来的。
+    下一单，得更早布局。
+  tags: ["坏结局", "卓亚赢"]
+  choices:
+    - text: "继续下一局"
+      next: __END__
+
+- id: deal_lost_zhongtaihe
+  title: "众泰和赢了"
+  speaker: "系统"
+  text: |
+    众泰和笑到了最后。
+
+    环球医疗的国企背书起了决定性作用——
+    在政府招标中，"国企合作"标签让评标委员会
+    直接把商务分打到了最高档。
+
+    「买 3 年送 1 年」的套餐更是直接击穿了
+    预算敏感科室的心理防线。
+
+    你后来了解到，众泰和签约后立即调配了
+    从其他区域借调的工程师资源来覆盖这家医院。
+
+    王科长给你发了一条消息：
+    「小林，下次有机会再合作。
+    你们的技术没问题，但这次价格差太多了。」
+
+    你知道这不是你的失败——
+    资本牌是原厂最难应对的一招。
+    下一单，得想办法绕开学分，或者找到不可替代的技术优势。
+  tags: ["坏结局", "众泰和赢"]
+  choices:
+    - text: "继续下一局"
+      next: __END__
+
+- id: deal_lost_hongyang
+  title: "鸿阳赢了"
+  speaker: "系统"
+  text: |
+    鸿阳笑到了最后。
+
+    45% 的折扣是决定性因素。
+    在价格面前，技术优势显得毫无意义。
+
+    签约那天，鸿阳的销售老板亲自开着私车来的，
+    说「公司还没来得及配车」。
+
+    你后来听说，这家医院的直线加速器，
+    一年后停了整整 3 周等一颗加速管。
+
+    王科长给你发了一条消息：
+    「小林，下次有机会再合作。
+    你们的技术没问题，但这次价格差太多了。」
+
+    你知道这不是你的失败——
+    低价赢了高价，是市场上常见的结局。
+    但客户最终会明白什么是真正的性价比。
+    下一单，得更早建立技术壁垒，让价格不是唯一衡量标准。
+  tags: ["坏结局", "鸿阳赢"]
+  choices:
+    - text: "继续下一局"
+      next: __END__
+    - effect: log
+      message: "💔 丢单。吸取教训，继续前行。"
+  choices:
+    - text: "复盘这次丢单的原因"
+      next: __END__

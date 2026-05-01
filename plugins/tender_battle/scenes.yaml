@@ -1,0 +1,1037 @@
+# ============================================================
+# tender_battle — 维保合同攻防战
+# 东州市人民医院放疗中心维保合同争夺战
+# 场景节点列表（按 id 排序）
+# ============================================================
+
+- id: contract_start
+  title: 「危机初现「
+  speaker: 「系统「
+  text: |
+    东州市人民医院放疗中心。
+
+    直线加速器：医科达 Versa HD，2019年装机。
+    当前维保：卓亚医疗，合同3个月后到期。
+
+    你的手机上躺着一条消息：
+    「听说卓亚已经在和陈主任接触了。「——某业内朋友
+
+    这台 Versa HD 当年是你跟的，现在维保合同也要你来守。
+
+    客户关系现状：
+    · 陈主任（放疗科）：态度中立，临床出身，关心设备稳定性
+    · 孙科长（设备科）：态度友善，关注价格和服务条款
+    · 钱副院长：即将退休，不愿担责，关键拍板人
+
+    合同到期前，你只有3个月时间。
+  tags: [「开场「, 「维保合同「]
+  choices:
+    - text: 「先去拜访陈主任，了解放疗科的想法「
+      next: oncology_intro
+    - text: 「先去拜访孙科长，摸摸合同条款的底「
+      next: equipment_intro
+    - text: 「先搜集卓亚情报，知己知彼「
+      next: intel_start
+
+- id: oncology_intro
+  title: 「放疗科：初次拜访「
+  speaker: 「陈主任「
+  text: |
+    东州市人民医院放疗科，陈主任办公室。
+
+    「小李啊，来了坐。「陈主任招呼你坐下。
+
+    他在放疗科干了二十年，临床出身，对设备故障特别敏感。
+    去年有一次加速器故障，卓亚的人修了8个小时，病人治疗被迫中断。
+
+    「你们医科达响应是快，但价格也是真的贵。「
+    他直截了当，「卓亚现在给我们报的价比你们便宜一半，备件也说没问题。「
+
+    他顿了顿，「说实话，设备用了五年了，能省就省吧。「
+  tags: [「放疗科「, 「陈主任「]
+  choices:
+    - text: 「向陈主任了解他对卓亚的具体担忧「
+      next: oncology_concern
+    - text: 「向陈主任展示医科达的技术优势「
+      next: oncology_quality_argument
+
+- id: oncology_concern
+  title: 「放疗科：卓亚的隐患「
+  speaker: 「陈主任「
+  text: |
+    「担忧？「陈主任苦笑。
+
+    「去年有一次，我正在给病人做治疗，突然报警，开不了机。「
+    他回忆，「卓亚的人来了，说要换某个部件，结果从上海调货，折腾了8个小时。「
+
+    「那天我只能跟病人说设备维护，要改治疗计划。「
+    「放疗的节奏一乱，病人和家属都有意见。「
+
+    他压低声音：「我听说，他们有些备件不是原厂的。
+    万一哪天出了大问题，谁负责？「
+
+    他看着你：「你们医科达能在多长时间到？「
+  tags: [「放疗科「, 「陈主任「, 「竞品弱点「]
+  choices:
+    - text: 「「我们2小时到场，4小时修复，否则按比例退还服务费「「
+      next: oncology_sla_commit
+    - text: 「「原厂备件是底线，卓亚那套有风险「「
+      next: oncology_quality_argument
+
+- id: oncology_sla_commit
+  title: 「放疗科：SLA承诺「
+  speaker: 「陈主任「
+  text: |
+    「2小时到场？「陈主任眉毛一挑。
+
+    「这个数字能写进合同吗？「
+
+    你当场拨打了医科达售后服务热线，确认了东州市的工程师排班：
+    工作日：2小时到场
+    夜间/节假日：4小时到场
+
+    陈主任点了点头：「这个比卓亚强。「
+    「但价格呢？你们比卓亚贵多少？「
+  tags: [「放疗科「, 「陈主任「, 「SLA「]
+  choices:
+    - text: 「「贵有贵的道理，设备稳定性就是生产力「「
+      next: oncology_value_argument
+    - text: 「「价格可以谈，但SLA必须写进合同「「
+      next: oncology_price_hint
+
+- id: oncology_value_argument
+  title: 「放疗科：价值论述「
+  speaker: 「陈主任「
+  text: |
+    「一台直线加速器，一天做20个病人，一个病人收费约1500元。「
+    你开始算账。
+
+    「停机一天，就是3万块的收入损失，还不算纠纷。「
+    「卓亚便宜，但他们备件来货慢。8小时那次的损失，够付好几年服务费差价了。「
+
+    陈主任沉思了一会儿。
+
+    「你说得有道理。「他终于开口。
+    「但最终拍板不在我这里——设备科和院领导说了算。「
+    「这样吧，我去跟孙科长打个招呼，你们先把服务方案做出来。「
+  tags: [「放疗科「, 「陈主任「, 「说服「]
+  on_enter:
+    - effect: set_attr
+      key: oncology_support
+      value: true
+  choices:
+    - text: 「继续拜访孙科长，推进设备科线「
+      next: equipment_intro
+    - text: 「先搜集卓亚情报，再制定针对性方案「
+      next: intel_start
+
+- id: oncology_price_hint
+  title: 「放疗科：价格松口「
+  speaker: 「陈主任「
+  text: |
+    「价格可以谈？「陈主任来了兴趣。
+
+    「这样，你们先把方案做出来，报个价。「
+    「如果价格差距不大，我可以帮你们在院里说说好话。「
+
+    他顿了顿：「但我有个条件——SLA必须白纸黑字写清楚。「
+    「我不想再经历一次8小时。「
+
+    你把这个承诺记在心里。
+  tags: [「放疗科「, 「陈主任「, 「价格「]
+  on_enter:
+    - effect: set_attr
+      key: oncology_price_interest
+      value: true
+  choices:
+    - text: 「去拜访孙科长，谈价格条款「
+      next: equipment_intro
+    - text: 「先搜集卓亚情报，知己知彼「
+      next: intel_start
+
+- id: oncology_quality_argument
+  title: 「放疗科：质量论争「
+  speaker: 「陈主任「
+  text: |
+    「非原厂备件？「陈主任脸色变了。
+
+    「这个我还真不知道。「
+    「老张——「他指的是卓亚的销售——「可没跟我说过这事。「
+
+    你掏出了医科达的官方备件清单，和网上搜到的一些资料。
+    卓亚的部分备件确实来自第三方，质量和原厂有差距。
+
+    「这事我得重新考虑考虑了。「
+    陈主任表情凝重，「你们医科达有没有什么官方说明？「
+  tags: [「放疗科「, 「陈主任「, 「竞品弱点「]
+  on_enter:
+    - effect: set_attr
+      key: oncology_concern_quality
+      value: true
+  choices:
+    - text: 「「这是我们的官方备件保证函，我给您一份「「
+      next: oncology_support_confirmed
+    - text: 「「具体细节我可以安排医科达工程师来给您解释「「
+      next: oncology_engineer_arrange
+
+- id: oncology_support_confirmed
+  title: 「放疗科：支持确认「
+  speaker: 「陈主任「
+  text: |
+    陈主任接过保证函，仔细看了一遍。
+
+    「好，我心中有数了。「
+    「你们赶紧做个方案出来，我这边会支持的。「
+
+    他送你到门口，补充了一句：
+    「但最终还是要过孙科长那一关。他最近和卓亚的人走得很近。「
+  tags: [「放疗科「, 「陈主任「, 「支持「]
+  on_enter:
+    - effect: set_attr
+      key: oncology_support
+      value: true
+  choices:
+    - text: 「去拜访孙科长，推进设备科线「
+      next: equipment_intro
+    - text: 「先搜集卓亚情报，再制定方案「
+      next: intel_start
+
+- id: oncology_engineer_arrange
+  title: 「放疗科：安排工程师「
+  speaker: 「陈主任「
+  text: |
+    「那行，安排一个工程师来给我讲讲也行。「
+    陈主任点了点头。
+
+    你当场联系了医科达驻东州市的资深工程师老赵，约定了下周二的回访。
+
+    「好，那我等你们的消息。「
+    陈主任送你出门，「记住，SLA要写清楚，这是我的底线。「
+  tags: [「放疗科「, 「陈主任「, 「工程师「]
+  on_enter:
+    - effect: set_attr
+      key: oncology_engineer_visit
+      value: true
+  choices:
+    - text: 「去拜访孙科长，推进设备科线「
+      next: equipment_intro
+    - text: 「先搜集卓亚情报，再制定方案「
+      next: intel_start
+
+- id: equipment_intro
+  title: 「设备科：初次拜访「
+  speaker: 「孙科长「
+  text: |
+    东州市人民医院设备科，孙科长办公室。
+
+    孙科长干了十五年设备采购，老成持重。
+    他和卓亚的销售老张关系不错——据说两人是同乡。
+
+    「李经理，来坐。「他招呼你，「我知道你的来意。「
+    「你们医科达的设备我们用了这么多年，服务确实没话说。「
+    「但——「
+
+    他话锋一转：
+    「今年院里要过紧日子，预算压缩了30%。「
+    「卓亚的报价比你们低40%，这个差距不小。「
+
+    「你们有没有什么办法？「
+  tags: [「设备科「, 「孙科长「, 「价格「]
+  choices:
+    - text: 「「价格可以谈，但服务条款不能打折「「
+      next: equipment_price_talk
+    - text: 「「孙科长，您对卓亚的续约条款了解多少？「「
+      next: equipment_contract_review
+
+- id: equipment_contract_review
+  title: 「设备科：合同条款审查「
+  speaker: 「孙科长「
+  text: |
+    「卓亚的合同？「孙科长愣了一下。
+
+    「他们给的是三年合同，年均价格比你们低40%。「
+    「条款方面——「他翻了翻文件夹，「响应时间48小时，比你们慢一些。「
+
+    「备件呢？「你追问。
+
+    孙科长沉默了片刻。
+    「这个我没仔细看过。不过老张跟我说过，备件都是原厂品质。「
+
+    「是吗？「你不动声色，「孙科长，我这边有一份医科达的官方备件说明，「
+    「您看看，是否和卓亚给的那份一样？「
+  tags: [「设备科「, 「孙科长「, 「合同条款「]
+  on_enter:
+    - effect: set_attr
+      key: equipment_contract_reviewed
+      value: true
+  choices:
+    - text: 「「我们可以提供原厂备件保证函「「
+      next: equipment_original_parts
+    - text: 「「48小时响应太慢了，临床等不起「「
+      next: equipment_response_time
+
+- id: equipment_price_talk
+  title: 「设备科：价格谈判「
+  speaker: 「孙科长「
+  text: |
+    「价格可以谈？「孙科长眼睛一亮。
+
+    「那你们能降多少？「
+    「卓亚给我们报的是年费48万，你们呢？「
+
+    你心里快速盘算：医科达的标准报价是年费80万，
+    但大客户可以谈到65万左右，条件是签三年。
+
+    「如果我们签三年，年费可以降到65万。「
+    你报了个数字，「而且SLA是2小时响应，原厂备件。「
+
+    孙科长皱了皱眉：「65万还是比卓亚贵不少。「
+    「你能不能再想想办法？「
+  tags: [「设备科「, 「孙科长「, 「价格谈判「]
+  choices:
+    - text: 「「65万已经是我们的底线了，但服务品质完全不同「「
+      next: equipment_value_push
+    - text: 「「如果院里能保证付款周期，我们可以再优惠一些「「
+      next: equipment_payment_terms
+
+- id: equipment_original_parts
+  title: 「设备科：原厂备件「
+  speaker: 「孙科长「
+  text: |
+    孙科长接过你递来的备件清单，仔细看了一会儿。
+
+    「等一下，「他脸色变了，「这个我得找卓亚的人确认一下。「
+
+    他当场拨通了老张的电话，按了免提。
+    「老张，你们的备件是原厂的吗？「
+
+    电话那头沉默了两秒：「这个……大部分是原厂的，部分是国产替代，品质一样。「
+
+    孙科长看了你一眼，脸色有些难看。
+    「好，我知道了。「他挂断了电话。
+  tags: [「设备科「, 「孙科长「, 「竞品弱点「]
+  on_enter:
+    - effect: set_attr
+      key: equipment_zhuoya_weakness_known
+      value: true
+  choices:
+    - text: 「「孙科长，原厂备件和非原厂的差异很大「「
+      next: equipment_parts_argument
+    - text: 「「这个您自己判断，我们医科达不会在备件上含糊「「
+      next: equipment_professional_tone
+
+- id: equipment_response_time
+  title: 「设备科：响应时间「
+  speaker: 「孙科长「
+  text: |
+    「48小时？「你皱了皱眉。
+
+    「孙科长，东州市人民医院的放疗量一天多少台？「
+    「停机一天，损失多少？「
+
+    孙科长没说话，但显然在算账。
+
+    「医科达的SLA是2小时响应，4小时修复。「
+    你说，「48小时和2小时，差了24倍。「
+
+    「这个……「孙科长明显被触动了，「你说的有道理。「
+    「但价格差距确实太大了，我也不好向上面交代。「
+  tags: [「设备科「, 「孙科长「, 「SLA「]
+  choices:
+    - text: 「「价格可以谈，但SLA必须保证2小时，这是医科达的底线「「
+      next: equipment_final_sla
+    - text: 「「孙科长，要不这样——您先看看我们的方案再决定？「「
+      next: equipment_solution_pending
+
+- id: equipment_value_push
+  title: 「设备科：价值推动「
+  speaker: 「孙科长「
+  text: |
+    「2小时响应和48小时响应，差了24倍的时间。「
+    你说，「停机一天，损失多少？陈主任那边有多着急，您比我清楚。「
+
+    孙科长沉默了一会儿。
+
+    「好吧，我承认你们的服务确实更好。「
+    「但这个价格，我需要向院领导汇报。「
+    「你们能不能先做一个正式的方案出来？「
+
+    他顿了顿：「还有，钱副院长那边，你们自己去攻关。「
+    「他马上要退休了，不想担责任。「
+  tags: [「设备科「, 「孙科长「, 「说服「]
+  on_enter:
+    - effect: set_attr
+      key: equipment_open_to_proposal
+      value: true
+  choices:
+    - text: 「去拜访钱副院长，攻关院领导线「
+      next: leadership_intro
+    - text: 「先搜集卓亚情报，再做针对性方案「
+      next: intel_start
+
+- id: equipment_payment_terms
+  title: 「设备科：付款方式「
+  speaker: 「孙科长「
+  text: |
+    「付款周期？「孙科长来了兴趣。
+
+    「如果我们能分期付——三年分六次，每次付三分之一，「
+    「价格可以再降2个点。「
+
+    孙科长算了算：「那就是年费63万，比原来降了2万。「
+    「这个数字……我还是得请示一下钱副院长。「
+
+    他看着你：「这样吧，你们先做一个完整的方案出来，「
+    「包括SLA、付款方式、备件清单，我上报给院领导。「
+  tags: [「设备科「, 「孙科长「, 「付款方式「]
+  on_enter:
+    - effect: set_attr
+      key: equipment_payment_agreed
+      value: true
+  choices:
+    - text: 「去拜访钱副院长，攻关院领导线「
+      next: leadership_intro
+    - text: 「先搜集卓亚情报，再做完整方案「
+      next: intel_start
+
+- id: equipment_parts_argument
+  title: 「设备科：备件论证「
+  speaker: 「孙科长「
+  text: |
+    你给孙科长详细解释了原厂备件和非原厂的差异：
+
+    「直线加速器的关键部件，比如加速管、磁控管，「
+    「非原厂备件在能量稳定性、安全阈值上都有差距。「
+
+    「万一出了问题，病人的治疗计划全乱，还可能引发纠纷。「
+
+    孙科长点了点头，脸色凝重：
+    「这事我有数了。「
+    「我会要求卓亚的人提供原厂证明，如果提供不了——「
+
+    他没把话说完，但意思很明显。
+  tags: [「设备科「, 「孙科长「, 「说服「]
+  on_enter:
+    - effect: set_attr
+      key: equipment_zhuoya_weakness_confirmed
+      value: true
+  choices:
+    - text: 「去拜访钱副院长，攻关院领导线「
+      next: leadership_intro
+    - text: 「先搜集卓亚情报，知己知彼「
+      next: intel_start
+
+- id: equipment_professional_tone
+  title: 「设备科：专业姿态「
+  speaker: 「孙科长「
+  text: |
+    孙科长沉默了一会儿。
+
+    「你说得对，我们采购的首先要对设备负责。「
+    他收起了之前的态度，「这样，卓亚那边我去问清楚。「
+    「如果他们真的在备件上打了折扣，那合同肯定要重新谈。「
+
+    「你们医科达的方案先做出来。「
+    他说，「下一步，上会讨论。「
+  tags: [「设备科「, 「孙科长「, 「专业「]
+  on_enter:
+    - effect: set_attr
+      key: equipment_professional_impression
+      value: true
+  choices:
+    - text: 「去拜访钱副院长，攻关院领导线「
+      next: leadership_intro
+    - text: 「先搜集卓亚情报，再做方案「
+      next: intel_start
+
+- id: equipment_final_sla
+  title: 「设备科：SLA底线「
+  speaker: 「孙科长「
+  text: |
+    「2小时响应？「孙科长有些为难。
+
+    「卓亚给的是48小时，这个差距……「
+    「你能保证医科达一定能做到？「
+
+    你掏出了医科达官方的SLA协议模板：
+    「2小时到场，4小时修复，7×24小时热线。「
+    「超时按比例退还服务费，白纸黑字。「
+
+    孙科长仔细看了一遍，终于点头：
+    「好，这个可以写进合同。「
+    「价格方面，我再去和钱副院长争取一下。「
+  tags: [「设备科「, 「孙科长「, 「SLA「]
+  on_enter:
+    - effect: set_attr
+      key: equipment_sla_confirmed
+      value: true
+  choices:
+    - text: 「去拜访钱副院长，攻关院领导线「
+      next: leadership_intro
+    - text: 「先搜集卓亚情报，再做完整方案「
+      next: intel_start
+
+- id: equipment_solution_pending
+  title: 「设备科：等待方案「
+  speaker: 「孙科长「
+  text: |
+    「好，你们先把方案做出来。「
+    孙科长递给你一张名片，「这是我们的采购需求模板，「
+    「按这个格式做就行。「
+
+    他补充道：「院里最近在查耗材和设备采购的合规性，「
+    「你们的价格和服务方案要经得起审计。「
+
+    「明白。「你收好名片，「孙科长，我们方案做好，第一时间给您。「
+  tags: [「设备科「, 「孙科长「, 「方案「]
+  choices:
+    - text: 「去拜访钱副院长，攻关院领导线「
+      next: leadership_intro
+    - text: 「先搜集卓亚情报，做一份有针对性的方案「
+      next: intel_start
+
+- id: leadership_intro
+  title: 「院领导：初次拜访「
+  speaker: 「钱副院长「
+  text: |
+    东州市人民医院行政楼，钱副院长办公室。
+
+    钱副院长五十七岁，还有两年退休。
+    他最近的心态是「平安着陆「——不想在最后阶段出任何岔子。
+
+    「李经理，是吧？「他招呼你坐下，「你们医科达的设备我们用得不错。「
+
+    「但是，「他话锋一转，「今年院里确实紧张。「
+    「上面的政策你也知道，公立医院要控费。「
+    「卓亚的报价比你们低那么多，这个账很难不算。「
+
+    「你们有什么优势，能让我们多付这40%的钱？「
+  tags: [「院领导「, 「钱副院长「, 「控费「]
+  choices:
+    - text: 「「医疗设备不是一般采购，一分钱一分货「「
+      next: leadership_value_argument
+    - text: 「「副院长，控费是政策，但设备故障的风险成本不得不考虑「「
+      next: leadership_risk_argument
+
+- id: leadership_value_argument
+  title: 「院领导：价值论述「
+  speaker: 「钱副院长「
+  text: |
+    「医疗设备不是一般采购，一分钱一分货。「
+    你说，「直线加速器的核心部件，原厂和非原厂的价格差一倍，「
+    「但安全性和稳定性完全不在一个档次。「
+
+    「去年某家医院用了非原厂备件，结果出了严重事故，「
+    「赔偿了800万，还被吊销了放疗资质。「
+
+    钱副院长的表情凝重了。
+
+    「这个案例我也听说过。「他缓缓点头，「风险确实要控制。「
+    「这样吧，你们做一个正式的方案出来，附上SLA条款和备件清单。「
+    「上会的时候，我会帮着说话的。「
+  tags: [「院领导「, 「钱副院长「, 「说服「]
+  on_enter:
+    - effect: set_attr
+      key: leadership_interested
+      value: true
+  choices:
+    - text: 「搜集卓亚情报，做针对性方案「
+      next: intel_start
+    - text: 「直接进入服务方案制作阶段「
+      next: solution_design
+
+- id: leadership_risk_argument
+  title: 「院领导：风险论述「
+  speaker: 「钱副院长「
+  text: |
+    「控费是政策，这个我理解。「
+    你说，「但设备故障的风险成本不得不考虑。「
+
+    「直线加速器一天处理20个病人，「
+    「停机一天的直接损失是3万，还不算纠纷和赔偿。「
+
+    「卓亚的响应时间是48小时，医科达是2小时。「
+    「如果发生故障，谁来担这个责任？「
+
+    钱副院长沉默了一会儿。
+
+    「你说得有道理。「他终于开口，「这样，「
+    「你们先做一个完整的方案，包括SLA承诺和备件清单，「
+    「我需要向院长办公会汇报。「
+  tags: [「院领导「, 「钱副院长「, 「风险「]
+  on_enter:
+    - effect: set_attr
+      key: leadership_risk_aware
+      value: true
+  choices:
+    - text: 「搜集卓亚情报，做针对性方案「
+      next: intel_start
+    - text: 「直接进入服务方案制作阶段「
+      next: solution_design
+
+- id: intel_start
+  title: 「情报收集「
+  speaker: 「系统「
+  text: |
+    在正式提交方案之前，你决定先摸清卓亚的底细。
+
+    你联系了几位业内朋友，搜集到了以下情报：
+
+    · 卓亚医疗，2008年成立，总部上海
+    · 主要客户：300+医院，主打医科达机型维保
+    · 优势：价格便宜，响应较快，本地工程师资源多
+    · 弱点：备件非原厂，SLA执行不稳定（实际响应常超时）
+
+    情报还显示：卓亚最近在东州市人民医院放了不少资源，
+    销售老张和孙科长关系很好，经常一起吃饭。
+  tags: [「情报「, 「卓亚「]
+  choices:
+    - text: 「深入调研卓亚的备件体系「
+      next: intel_parts_investigation
+    - text: 「调研卓亚在东州市其他医院的案例「
+      next: intel_case_study
+    - text: 「直接进入服务方案制作阶段「
+      next: solution_design
+
+- id: intel_parts_investigation
+  title: 「情报：备件体系「
+  speaker: 「系统「
+  text: |
+    你通过业内渠道，拿到了卓亚的部分备件采购单。
+
+    发现以下问题：
+
+    · 2023年，卓亚从第三方采购了一批磁控管，
+      价格是原厂的60%，但未经医科达官方认证
+    · 有两家医院因卓亚的备件问题，出现过能量输出漂移
+      其中一家差点出安全事故
+
+    这些信息足够你在和陈主任、孙科长沟通时，
+    作为质疑卓亚备件体系的「弹药「。
+  tags: [「情报「, 「卓亚弱点「, 「备件「]
+  on_enter:
+    - effect: set_attr
+      key: intel_zhuoya_parts
+      value: true
+  choices:
+    - text: 「带着这些信息去拜访陈主任「
+      next: oncology_intro
+    - text: 「带着这些信息去拜访孙科长「
+      next: equipment_intro
+    - text: 「进入服务方案制作阶段「
+      next: solution_design
+
+- id: intel_case_study
+  title: 「情报：案例调研「
+  speaker: 「系统「
+  text: |
+    你调研了卓亚在东州市其他医院的维保案例：
+
+    · 东州市第三人民医院：2024年签约卓亚，
+      半年内发生两次停机，最长一次72小时，
+      放疗科主任向院长投诉了三次
+
+    · 东州市中心医院：卓亚报价最低，
+      但因备件问题，实际修复时间比承诺多了一倍，
+      医院最终提前解约，赔了违约金
+
+    这些负面案例可以作为你方案对比时的参考。
+  tags: [「情报「, 「卓亚弱点「, 「案例「]
+  on_enter:
+    - effect: set_attr
+      key: intel_zhuoya_cases
+      value: true
+  choices:
+    - text: 「带着这些信息去拜访陈主任「
+      next: oncology_intro
+    - text: 「带着这些信息去拜访孙科长「
+      next: equipment_intro
+    - text: 「进入服务方案制作阶段「
+      next: solution_design
+
+- id: solution_design
+  title: 「服务方案制作「
+  speaker: 「系统「
+  text: |
+    回到医科达办公室，你开始制作维保服务方案。
+
+    方案核心内容：
+
+    【医科达 Versa HD 维保方案】
+    · 合同期：3年
+    · 年费：63万（分期付，三年付清）
+    · SLA：2小时到场，4小时修复，7×24小时热线
+    · 备件：100%原厂备件
+    · 工程师：医科达认证资深工程师（老赵团队）
+    · 额外服务：每季度预防性维护一次，每年系统校准一次
+
+    方案比卓亚的报价高40%，
+    但在SLA、备件品质、工程师资质上全面领先。
+  tags: [「方案「, 「服务设计「]
+  choices:
+    - text: 「带着方案拜访钱副院长，请他上会支持「
+      next: leadership_final_meeting
+    - text: 「先约陈主任和孙科长确认，再提交方案「
+      next: pre_submission_review
+
+- id: pre_submission_review
+  title: 「提交前最终确认「
+  speaker: 「系统「
+  text: |
+    你分别约了陈主任和孙科长，做方案提交前的最终确认。
+
+    陈主任：
+    「方案我看了，SLA那一条很关键，写进合同我放心。「
+    「上会的时候我会支持你们。「
+
+    孙科长：
+    「价格还是高了点，但我可以去和钱副院长争取。「
+    「不过，你们要做好准备，卓亚可能会再次压价。「
+  tags: [「提交前「, 「确认「]
+  choices:
+    - text: 「带着最终确认去拜访钱副院长「
+      next: leadership_final_meeting
+    - text: 「直接提交方案，等待院内评审「
+      next: contract_evaluation
+
+- id: leadership_final_meeting
+  title: 「院领导：最终攻关「
+  speaker: 「钱副院长「
+  text: |
+    你带着完整的方案去见钱副院长。
+
+    「这是医科达的正式维保方案，请您过目。「
+
+    钱副院长仔细看了SLA条款和备件清单。
+
+    「原厂备件、2小时响应、7×24小时热线……「
+    他点了点头，「这个方案做得不错。「
+
+    「但价格——「他抬头看你，「卓亚那边也在压价。「
+    「你们能不能再有一些优惠？「
+
+    你知道这是最后的博弈。
+  tags: [「院领导「, 「钱副院长「, 「最终谈判「]
+  choices:
+    - text: 「「我们已经是最大诚意了，三年合同总价可以再降3万「「
+      next: negotiation_final_discount
+    - text: 「「SLA和服务品质不能降，这是医科达的底线「「
+      next: negotiation_final_stand
+
+- id: negotiation_final_discount
+  title: 「最终谈判：最后优惠「
+  speaker: 「钱副院长「
+  text: |
+    「三年总价再降3万，「你报出最终数字，
+    「那就是年费62万，三年共186万。「
+
+    钱副院长沉默了一会儿，终于点头。
+
+    「好，我知道了。「
+    「下周院长办公会，我会把这个方案报上去。「
+
+    「你们准备好应答专家提问。「
+
+    你心里松了一口气——最难的一关过去了。
+  tags: [「最终谈判「, 「价格「]
+  on_enter:
+    - effect: set_attr
+      key: leadership_final_support
+      value: true
+  choices:
+    - text: 「准备院长办公会应答「
+      next: contract_evaluation
+
+- id: negotiation_final_stand
+  title: 「最终谈判：坚守底线「
+  speaker: 「钱副院长「
+  text: |
+    「SLA和服务品质不能降，这是医科达的底线。「
+    你说，「价格已经是我们的最大诚意。「
+
+    钱副院长看了你好一会儿。
+
+    「好，有原则。「他最终点头，
+    「我欣赏这种专业态度。「
+
+    「下周院长办公会，我会如实反映你们的态度。「
+    「最终结果，要看集体决策。「
+
+    你知道这已经是最好的结果了。
+  tags: [「最终谈判「, 「底线「]
+  on_enter:
+    - effect: set_attr
+      key: leadership_final_support
+      value: true
+  choices:
+    - text: 「准备院长办公会应答「
+      next: contract_evaluation
+
+- id: contract_evaluation
+  title: 「院长办公会评审「
+  speaker: 「系统「
+  text: |
+    东州市人民医院会议室，院长办公会。
+
+    到会人员：钱副院长、孙科长、陈主任、设备采购组成员。
+
+    医科达方案 vs 卓亚方案对比：
+
+    | 项目 | 医科达 | 卓亚 |
+    |------|--------|------|
+    | 年费 | 62万 | 43万 |
+    | 响应时间 | 2小时 | 48小时 |
+    | 备件 | 原厂 | 部分非原厂 |
+    | SLA | 合同保证 |口头承诺 |
+
+    会上，陈主任明确支持医科达：
+    「放疗科最怕停机，SLA是关键。「
+
+    孙科长则有些为难：
+    「价格差距确实不小，但备件品质也不能忽视。「
+
+    钱副院长最后的发言是：
+    「今天不定论，大家再考虑考虑。「
+
+    会后，你收到消息：卓亚知道评审结果后，紧急降价！
+  tags: [「评审「, 「卓亚反制「]
+  choices:
+    - text: 「立即联系陈主任和孙科长，稳住支持「
+      next: last_ditch_defense
+    - text: 「主动找卓亚谈，问问他们到底想干什么「
+      next: zhuoya_confrontation
+
+- id: last_ditch_defense
+  title: 「最后防守：稳住阵脚「
+  speaker: 「系统「
+  text: |
+    你分别给陈主任和孙科长打了电话。
+
+    陈主任：
+    「李经理，我已经和钱副院长说了，放疗科的意见很重要。「
+    「他们卓亚就是价格战，等真出了故障就知道后悔了。「
+
+    孙科长：
+    「老张刚才给我打电话，说可以再降5万。「
+    「但我跟他们说，这事要重新评估，不能只看价格。「
+
+    稳住两人后，你松了一口气。
+    关键时候，医科达的品牌和技术优势开始发挥作用。
+  tags: [「最后防守「, 「稳住阵脚「]
+  choices:
+    - text: 「等待最终结果「
+      next: contract_result
+
+- id: zhuoya_confrontation
+  title: 「直面卓亚「
+  speaker: 「系统「
+  text: |
+    你主动约了卓亚的销售老张见面。
+
+    「张总，听说你们又降价了？「
+
+    老张笑了笑：
+    「李经理，你们医科达的价格太高了，医院也要过日子。「
+    「我们卓亚就是想让利于客户，没有别的意思。「
+
+    「是吗？「你不动声色，「那备件的事呢？「
+    「你们给医院承诺的是原厂备件，实际上呢？「
+
+    老张的笑容僵住了。
+
+    「那个……是下面的工程师说的，我们总部不知道。「
+    「但我可以保证，以后一定用原厂备件。「
+
+    你知道，这场博弈还没结束。
+  tags: [「直面卓亚「, 「博弈「]
+  on_enter:
+    - effect: set_attr
+      key: zhuoya_confrontation_done
+      value: true
+  choices:
+    - text: 「把这次对话整理成纪要，提交给医院「
+      next: intel_report
+    - text: 「等待最终结果「
+      next: contract_result
+
+- id: intel_report
+  title: 「提交情报纪要「
+  speaker: 「系统「
+  text: |
+    你将会见老张的内容整理成纪要，
+    匿名提交给了医院设备采购组。
+
+    纪要要点：
+    · 卓亚部分备件来自非原厂渠道
+    · SLA执行不稳定（实际响应常超时）
+    · 卓亚销售口头承诺与实际操作不符
+
+    这个纪要在院长办公会引起了重视。
+    医院纪检部门开始关注卓亚的资质问题。
+  tags: [「情报纪要「, 「卓亚「]
+  on_enter:
+    - effect: set_attr
+      key: intel_report_submitted
+      value: true
+  choices:
+    - text: 「等待最终结果「
+      next: contract_result
+
+- id: contract_result
+  title: 「合同结果「
+  speaker: 「系统「
+  text: |
+    东州市人民医院最终决议：
+
+    【维保合同花落谁家？】
+
+    经过院长办公会多轮讨论，
+    考虑到：
+    · 医科达的原厂备件保证
+    · 2小时响应的SLA承诺
+    · 卓亚备件问题的持续质疑
+    · 陈主任等临床科室的明确支持
+
+    最终决定——
+  tags: [「结局「, 「合同结果「]
+  choices: []
+
+# ============================================================
+# 结局节点（6个）
+# ============================================================
+
+- id: contract_won_full
+  title: 「维保合同：全面胜利「
+  speaker: 「系统「
+  text: |
+    【结果：医科达胜出】
+
+    院长办公会投票结果：5票赞成医科达，2票弃权。
+
+    钱副院长当场宣布：
+    「经过综合评估，我们决定与医科达签订三年维保合同。「
+
+    卓亚最终落败，输在：
+    · 备件非原厂的核心问题上
+    · SLA承诺与实际执行的差距
+    · 医院对风险控制的高度重视
+
+    三年合同，总价186万。
+    你为医科达守住了东州市人民医院这一城。
+  tags: [「结局「, 「胜利「]
+  choices:
+    - text: 「重新开始「
+      next: contract_start
+
+- id: contract_won_narrow
+  title: 「维保合同：险胜「
+  speaker: 「系统「
+  text: |
+    【结果：险胜】
+
+    院长办公会投票结果：4票赞成医科达，3票赞成卓亚。
+
+    票数非常接近，卓亚在最后一刻大幅降价，
+    但医科达凭借SLA承诺和原厂备件的优势，赢得了关键摇摆票。
+
+    钱副院长宣布：
+    「医科达以微弱优势胜出，签订三年维保合同。「
+
+    这次胜利来之不易。
+    卓亚已经开始在东州市其他医院布局，
+    下一次竞争，只会更加激烈。
+  tags: [「结局「, 「险胜「]
+  choices:
+    - text: 「重新开始「
+      next: contract_start
+
+- id: contract_lost_zhuoya
+  title: 「维保合同：卓亚胜出「
+  speaker: 「系统「
+  text: |
+    【结果：卓亚胜出】
+
+    院长办公会投票结果：4票赞成卓亚，2票赞成医科达，1票弃权。
+
+    卓亚在最后一刻大幅降价，年费从43万降到了38万。
+    价格差距太大，医院的控费压力下，卓亚笑到了最后。
+
+    钱副院长拍板：
+    「卓亚的性价比更高，签卓亚。「
+
+    你输在了价格上。
+    但陈主任会后对你说：
+    「下次有机会，我们还是要找医科达。卓亚那个48小时响应，我心里没底。「
+
+    合同虽然丢了，但客户关系的火种还在。
+  tags: [「结局「, 「失败「, 「卓亚「]
+  choices:
+    - text: 「重新开始「
+      next: contract_start
+
+- id: contract_lost_stalemate
+  title: 「维保合同：流标「
+  speaker: 「系统「
+  text: |
+    【结果：流标】
+
+    院长办公会陷入僵局。
+
+    支持医科达的认为：SLA和备件品质是关键，不能只图便宜。
+    支持卓亚的认为：38万的差价太大，控费压力下必须考虑成本。
+
+    双方僵持不下，钱副院长宣布：
+    「暂时搁置争议，明年再议。「
+
+    维保合同进入「空窗期「——
+    设备在保修期外运行，没有任何维保服务。
+    风险完全由医院自己承担。
+
+    你知道，这不是任何人想要的结果。
+  tags: [「结局「, 「僵局「]
+  choices:
+    - text: 「重新开始「
+      next: contract_start
+
+- id: contract_lost_price_war
+  title: 「维保合同：价格战失败「
+  speaker: 「系统「
+  text: |
+    【结果：价格战失败】
+
+    卓亚在最后一刻祭出杀手锏：
+    年费32万，三年绑签，再送一年服务。
+
+    这个价格已经低于医科达的成本线。
+    医院无法拒绝这样的价格。
+
+    钱副院长：
+    「对不起，我们也要过日子。「
+
+    你输了，而且输得很彻底。
+    价格战从来不是医科达的战场。
+    但这次失利，也让你更加清楚：
+    医科达的价值，不在于低价，而在于不可替代的服务品质。
+  tags: [「结局「, 「价格战失败「]
+  choices:
+    - text: 「重新开始「
+      next: contract_start
+
+- id: tender_end
+  title: 「维保合同攻防战 — 终「
+  speaker: 「系统「
+  text: |
+    【第二剧本·完】
+
+    东州市人民医院维保合同争夺战，胜负已分。
+
+    无论结果如何，这场战役让你更加深刻地理解了：
+    · 医科达的核心竞争力在于SLA和原厂备件
+    · 客户关系是长期工程，需要持续经营
+    · 价格战是双刃剑，卓亚也未必能全身而退
+
+    下一场战役，在等着你。
+  tags: [「结局「, 「终章「]
+  choices:
+    - text: 「重新开始「
+      next: contract_start

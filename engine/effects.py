@@ -100,6 +100,57 @@ def effect_log(state: GameState, message: str) -> str:
     return message
 
 
+# ── 技能系统效果（inline 实现，避免循环导入）─────────────
+
+def _get_skill_system(state: GameState):
+    from .systems.skills import SkillSystem
+    ss = getattr(state, "_skill_system", None)
+    if ss is None:
+        ss = SkillSystem()
+        state._skill_system = ss
+    return ss
+
+
+def effect_add_skill_point(state: GameState, amount: int, reason: str = "") -> str:
+    ss = _get_skill_system(state)
+    ss.add_skill_points(amount, reason)
+    msg = f"+{amount} 技能点"
+    if reason:
+        msg += f"（{reason}）"
+    return f"【技能点】{msg}"
+
+
+def effect_learn_skill(state: GameState, skill_id: str) -> str:
+    from .systems.skills import SKILL_DEFINITIONS, SkillLevel
+    ss = _get_skill_system(state)
+    if skill_id not in SKILL_DEFINITIONS:
+        return f"【错误】未知技能: {skill_id}"
+    sl = ss.skills.get(skill_id)
+    if sl is None:
+        sl = SkillLevel(skill_id=skill_id, level=1, points_spent=0)
+        ss.skills[skill_id] = sl
+    elif sl.level < 5:
+        sl.level += 1
+    name = SKILL_DEFINITIONS[skill_id]["name"]
+    return f"【技能习得】{name} Lv.{sl.level}（+{sl.bonus()} 加值）"
+
+
+def effect_gain_exp(state: GameState, skill_id: str, amount: float) -> str:
+    from .systems.skills import SKILL_DEFINITIONS
+    ss = getattr(state, "_skill_system", None)
+    if ss is None:
+        return ""
+    sl = ss.skills.get(skill_id)
+    if sl is None:
+        return ""
+    leveled = sl.add_exp(amount)
+    name = SKILL_DEFINITIONS.get(skill_id, {}).get("name", skill_id)
+    msg = f"+{amount:.0f} 经验 → {name}"
+    if leveled:
+        msg += f" ⬆ 升到 Lv.{sl.level}！"
+    return msg
+
+
 # 效果分发映射
 EFFECT_DISPATCH = {
     "mod_attr":           effect_mod_attr,
@@ -112,6 +163,10 @@ EFFECT_DISPATCH = {
     "set_npc_flag":       effect_set_npc_flag,
     "advance_time":       effect_advance_time,
     "log":                effect_log,
+    # 技能系统
+    "add_skill_point":    effect_add_skill_point,
+    "learn_skill":        effect_learn_skill,
+    "gain_exp":           effect_gain_exp,
 }
 
 

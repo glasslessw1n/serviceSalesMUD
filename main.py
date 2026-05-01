@@ -20,7 +20,8 @@ from pathlib import Path
 from engine import (
     TreeEngine, load_plugins,
     render_scene, render_status, render_logs,
-    clear_screen, prompt_choice, console,
+    render_roll_result,
+    clear_screen, console,
 )
 
 # ── 路径 ──────────────────────────────────────────
@@ -105,6 +106,8 @@ def list_saves():
 
 def game_loop(engine: TreeEngine):
     """主游戏循环"""
+    roll_result = None  # 本轮要显示的 roll 判定结果
+
     while True:
         clear_screen()
 
@@ -113,8 +116,9 @@ def game_loop(engine: TreeEngine):
             console.print("[bold red]致命错误：当前节点不存在[/bold red]")
             break
 
-        # 渲染场景
-        render_scene(engine)
+        # 渲染场景（显示上一轮遗留的 roll 结果）
+        render_scene(engine, roll_result=roll_result)
+        roll_result = None  # 已消费，重置
 
         available = engine.get_available_choices()
 
@@ -137,8 +141,8 @@ def game_loop(engine: TreeEngine):
                 break
             continue
 
-        # 状态面板
-        render_status(engine.state)
+        # 状态面板（含技能点）
+        render_status(engine.state, engine)
 
         # 特殊命令提示
         console.print(
@@ -187,6 +191,9 @@ def game_loop(engine: TreeEngine):
             console.print(f"[red]{msg}[/red]")
             input("按 Enter 继续...")
             continue
+
+        # 暂存 roll_result，下一轮渲染场景时显示
+        roll_result = engine.last_roll_result
 
         # 显示效果日志
         render_logs(logs)

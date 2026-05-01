@@ -138,6 +138,39 @@ def _engine_to_game_data(engine: TreeEngine) -> dict:
     # 标记
     flags_data = sorted(engine.state.flags)
 
+    # Roll 结果（上次判定的结果）
+    roll_result_data = None
+    rr = getattr(engine, 'last_roll_result', None)
+    if rr:
+        roll_result_data = {
+            "success": rr.success,
+            "roll": rr.roll,
+            "bonus": rr.bonus,
+            "final": rr.final,
+            "margin": rr.margin,
+            "crit": getattr(rr, 'crit', False),
+            "fumble": getattr(rr, 'fumble', False),
+            "skill_name": getattr(rr, 'skill_name', ''),
+            "narrative": getattr(rr, 'narrative', ''),
+        }
+
+    # 技能系统
+    skill_data = None
+    ss = getattr(engine.state, '_skill_system', None)
+    if ss:
+        skill_data = {
+            "skill_points": ss.skill_points,
+            "skills": [
+                {
+                    "id": sid,
+                    "name": sinfo.name,
+                    "level": s.level,
+                    "exp": s.exp,
+                }
+                for sid, s in ss.skills.items()
+            ],
+        }
+
     return {
         "node_id": node.id,
         "title": node.title,
@@ -152,8 +185,11 @@ def _engine_to_game_data(engine: TreeEngine) -> dict:
         "flags": flags_data,
         "day": engine.state.day,
         "hour": engine.state.hour,
-        "is_end": node.id == "__END__",
+        "is_end": len(node.choices) == 0,
         "game_id": session.get("game_id", ""),
+        "roll_result": roll_result_data,
+        "skill_data": skill_data,
+        "visited_nodes": list(engine.state.visited_nodes),
     }
 
 
@@ -189,13 +225,16 @@ def api_choose():
 
 @app.route("/api/new", methods=["POST"])
 def api_new():
-    """开始新游戏"""
+    """开始新游戏（可选 root_node_id）"""
+    data = request.get_json() or {}
+    root_node_id = data.get("root_node_id", "start")
+
     sid = session.get("game_id")
     if sid and sid in server_sessions:
         del server_sessions[sid]
 
     engine = TreeEngine()
-    load_plugins(engine, PLUGINS_DIR, root_node_id="start")
+    load_plugins(engine, PLUGINS_DIR, root_node_id=root_node_id)
     sid = uuid.uuid4().hex
     session["game_id"] = sid
     server_sessions[sid] = _serialize(engine)

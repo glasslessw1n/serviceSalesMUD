@@ -40,14 +40,18 @@ def _find_plugins(root: Path) -> list[Path]:
 
 def _parse_scene_node(data: dict, plugin_name: str) -> TreeNode:
     """从 YAML dict 解析单个场景节点"""
+    from .tree import RollConfig
+
     choices = []
     for cdata in data.get("choices", []):
         choices.append(Choice(
             text=cdata["text"],
-            next_node=cdata["next"],
+            next_node=cdata.get("next", "__END__"),
             conditions=cdata.get("conditions", []),
             effects=cdata.get("effects", []),
             tags=cdata.get("tags", []),
+            roll_success_node=cdata.get("roll_success_node", ""),
+            roll_fail_node=cdata.get("roll_fail_node", ""),
         ))
 
     # 合并 effects 和 on_enter：YAML 中 effects 是 on_enter 的简写
@@ -55,6 +59,19 @@ def _parse_scene_node(data: dict, plugin_name: str) -> TreeNode:
     node_effects = data.get("effects", [])
     if node_effects:
         on_enter = on_enter + node_effects
+
+    # 解析节点级 roll
+    roll_config = None
+    roll_data = data.get("roll")
+    if roll_data:
+        roll_config = RollConfig(
+            skill=roll_data.get("skill", ""),
+            difficulty=roll_data.get("difficulty", "normal"),
+            label=roll_data.get("label", ""),
+            exp_on_success=roll_data.get("exp_on_success", 0),
+            exp_on_fail=roll_data.get("exp_on_fail", 0),
+            skill_point_on_success=roll_data.get("skill_point_on_success", 0),
+        )
 
     return TreeNode(
         id=data["id"],
@@ -64,6 +81,7 @@ def _parse_scene_node(data: dict, plugin_name: str) -> TreeNode:
         choices=choices,
         tags=data.get("tags", []),
         plugin=plugin_name,
+        roll=roll_config,
         on_enter=on_enter,
         on_exit=data.get("on_exit", []),
     )

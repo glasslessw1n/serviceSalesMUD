@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Optional
 
 
 class Attr(StrEnum):
@@ -51,7 +51,15 @@ class GameState:
         Attr.BUSINESS: 20,
         Attr.REPUTATION: 0,
         Attr.FUNDS: 0,
+        # 竞品好感度（50=中立，<50=玩家占优，>50=竞品占优）
+        "competitor_zhuoya": 50,
+        "competitor_hongyang": 50,
+        "competitor_zhongtaihe": 50,
     })
+
+    # 技能系统（动态属性，不在 dataclass 构造参数里，
+    # 通过 getattr/setattr 访问，避免 pickle 问题）
+    _skill_system: Optional[Any] = field(default=None, repr=False)
 
     # NPC 关系
     npcs: dict[str, NPCState] = field(default_factory=dict)

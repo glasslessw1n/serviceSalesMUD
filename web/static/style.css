@@ -351,6 +351,23 @@ body {
   margin: 2px;
 }
 
+.skill-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+  padding: 2px 0;
+}
+
+.skill-name {
+  color: var(--text);
+}
+
+.skill-level {
+  color: var(--yellow);
+  font-weight: bold;
+}
+
 /* ── 按钮 ──────────────────────────────────── */
 
 .btn-primary {

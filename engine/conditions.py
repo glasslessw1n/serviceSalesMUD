@@ -93,6 +93,22 @@ def check_time(state: GameState, op: str, hour: int) -> bool:
 
 
 # 条件分发映射
+
+
+def check_competitor_favor(state: GameState, competitor: str, op: str, value: int) -> bool:
+    """竞品好感度比较（attr 中存储：zhuoya / hongyang / zhongtaihe）"""
+    attr_key = f"competitor_{competitor}"
+    current = state.get_attr(attr_key)
+    ops = {
+        ">=": lambda a, b: a >= b,
+        "<=": lambda a, b: a <= b,
+        ">":  lambda a, b: a > b,
+        "<":  lambda a, b: a < b,
+        "==": lambda a, b: a == b,
+        "!=": lambda a, b: a != b,
+    }
+    return ops[op](current, value)
+
 CONDITION_DISPATCH = {
     "attr":          check_attr,
     "npc_relation":  check_npc_relation,
@@ -102,6 +118,7 @@ CONDITION_DISPATCH = {
     "has_item":      check_has_item,
     "visited":       check_visited,
     "time":          check_time,
+    "competitor_favor": check_competitor_favor,
 }
 
 
